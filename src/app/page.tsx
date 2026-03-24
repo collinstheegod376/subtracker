@@ -5,7 +5,6 @@ import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useSettings } from '@/lib/settings-context';
 import { getSubscriptions, type Subscription } from '@/lib/api';
-import OPayCard from '@/components/OPayCard';
 
 const stagger = {
   hidden: { opacity: 0 },
@@ -61,6 +60,24 @@ export default function Dashboard() {
         { name: 'GitHub Pro', sub: 'Advanced Security • Annual', price: formatAmount(4.00), icon: 'terminal', status: 'ACTIVE', color: 'bg-tertiary-fixed text-on-tertiary-fixed' },
         { name: 'Netflix Premium', sub: '4K + HDR • Monthly', price: formatAmount(22.99), icon: 'movie', status: 'DUE SOON', color: 'bg-secondary-fixed text-on-secondary-fixed' },
         { name: 'Spotify Family', sub: '6 Accounts • Monthly', price: formatAmount(16.99), icon: 'music_note', status: 'ACTIVE', color: 'bg-tertiary-fixed text-on-tertiary-fixed' },
+      ];
+
+  const upcomingReminders = hasSubs
+    ? activeSubs.map(s => {
+        // Fallback to a stable fake day if no next_billing_date exists in the database
+        const anyS = s as any;
+        const day = anyS.next_billing_date ? new Date(anyS.next_billing_date).getDate().toString() : ((s.name.charCodeAt(0) % 28) + 1).toString().padStart(2, '0');
+        return {
+          day,
+          name: s.name,
+          note: `${s.billing_cycle} renewal`,
+          amount: formatAmount(Number(s.amount))
+        };
+      }).sort((a, b) => Number(a.day) - Number(b.day)).slice(0, 3)
+    : [
+        { day: '12', name: 'Creative Cloud', note: 'Auto-renewing tomorrow', amount: formatAmount(54.99) },
+        { day: '15', name: 'AWS Services', note: 'Usage-based estimate', amount: formatAmount(210.00) },
+        { day: '18', name: 'Hulu + Live TV', note: 'Legacy Plan', amount: formatAmount(74.99) },
       ];
 
   return (
@@ -136,11 +153,7 @@ export default function Dashboard() {
               <span className="material-symbols-outlined text-on-primary-container">event</span>
             </div>
             <div className="space-y-6 flex-1">
-              {[
-                { day: '12', name: 'Creative Cloud', note: 'Auto-renewing tomorrow', amount: formatAmount(54.99) },
-                { day: '15', name: 'AWS Services', note: 'Usage-based estimate', amount: formatAmount(210.00) },
-                { day: '18', name: 'Hulu + Live TV', note: 'Legacy Plan', amount: formatAmount(74.99) },
-              ].map((item, i) => (
+              {upcomingReminders.map((item, i) => (
                 <motion.div 
                   key={i}
                   initial={{ opacity: 0, x: -12 }}
@@ -253,34 +266,6 @@ export default function Dashboard() {
               ))}
             </div>
           </motion.div>
-          {/* Donation Section */}
-          <div className="col-span-12 grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
-            {/* OPay Donation Component */}
-            <motion.div variants={fadeUp} className="bg-surface-container-lowest dark:bg-slate-800 rounded-2xl p-6 lg:p-8 shadow-sm border border-slate-100 dark:border-slate-700/50 flex flex-col justify-center">
-              <div className="mb-6">
-                <h4 className="font-headline text-lg lg:text-xl font-bold text-primary dark:text-white">Support the Project</h4>
-                <p className="text-xs text-on-surface-variant dark:text-slate-400 mt-1">Send a donation via the account below to help keep the tracker alive.</p>
-              </div>
-              <OPayCard />
-            </motion.div>
-
-            {/* Google Ads Component */}
-            <motion.div variants={fadeUp} className="bg-surface-container-lowest dark:bg-slate-800 rounded-2xl p-6 lg:p-8 shadow-sm border border-slate-100 dark:border-slate-700/50 flex flex-col justify-center items-center relative overflow-hidden min-h-[300px]">
-              <div className="absolute top-4 left-6">
-                <span className="text-[10px] font-bold text-on-surface-variant dark:text-slate-400 uppercase tracking-widest">Sponsored</span>
-              </div>
-              <div className="w-full flex items-center justify-center mt-4 pt-4">
-                <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2058540379247198" crossOrigin="anonymous"></script>
-                <ins className="adsbygoogle"
-                     style={{ display: "block", width: "100%", height: "250px" }}
-                     data-ad-client="ca-pub-2058540379247198"
-                     data-ad-slot="f08c47fec0942fa0"
-                     data-ad-format="auto"
-                     data-full-width-responsive="true"></ins>
-                <script dangerouslySetInnerHTML={{ __html: "(window.adsbygoogle = window.adsbygoogle || []).push({});" }} />
-              </div>
-            </motion.div>
-          </div>
         </div>
       </motion.div>
       

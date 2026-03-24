@@ -12,6 +12,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boo
     { name: 'Subscriptions', href: '/subscriptions', icon: 'subscriptions' },
     { name: 'Add Service', href: '/add', icon: 'add_circle' },
     { name: 'Analytics', href: '/analytics', icon: 'analytics' },
+    { name: 'Donation', href: '/donation', icon: 'volunteer_activism' },
   ];
 
   return (
@@ -38,10 +39,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boo
         )}
       >
         <div className="mb-8 px-2 flex justify-between items-center">
-          <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-[#002B5C] dark:text-blue-100 font-headline">SUB TRACK</h1>
-            <p className="font-label text-xs text-slate-500 dark:text-slate-400">SO YOU WONT OVER SPEND MADE BY ITACHI.</p>
-          </div>
+          <img src="/logo.png" alt="SUB TRACK" className="h-10 lg:h-12 w-auto object-contain drop-shadow-sm rounded-lg" />
           <button className="lg:hidden text-slate-400 hover:text-slate-600 transition-colors p-1" onClick={() => setMobileOpen(false)}>
             <span className="material-symbols-outlined">close</span>
           </button>
