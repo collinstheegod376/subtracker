@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+}
+
+@layer utilities {
+  .spend-pulse-gradient {
+    background: linear-gradient(180deg, rgba(105, 255, 135, 0.15) 0%, rgba(105, 255, 135, 0) 100%);
+  }
+  .primary-gradient {
+    background: linear-gradient(135deg, #00153e 0%, #002867 100%);
+  }
+  .bg-primary-gradient {
+    background: linear-gradient(135deg, #00153e 0%, #002867 100%);
+  }
+  .glass-card {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(24px);
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
