@@ -1,13 +1,15 @@
 import type { Metadata } from 'next';
 import { Inter, Manrope } from 'next/font/google';
+import { AuthProvider } from '@/lib/auth-context';
+import { SettingsProvider } from '@/lib/settings-context';
 import './globals.css';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope' });
 
 export const metadata: Metadata = {
-  title: 'Financial Editorial',
-  description: 'Curated subscription dashboard',
+  title: 'Financial Editorial - Subscription Tracker',
+  description: 'Curated subscription dashboard for tracking and managing your recurring services.',
 };
 
 export default function RootLayout({
@@ -16,12 +18,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" />
-      </head>
-      <body className={`${inter.variable} ${manrope.variable} bg-surface font-body text-on-surface antialiased`}>
-        {children}
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable} ${manrope.variable} bg-surface dark:bg-[#0f1115] font-body text-on-surface dark:text-slate-200 antialiased transition-colors duration-300`}>
+        <AuthProvider>
+          <SettingsProvider>
+            {children}
+          </SettingsProvider>
+        </AuthProvider>
       </body>
     </html>
   );

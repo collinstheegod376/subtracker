@@ -1,42 +1,150 @@
 "use client";
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { getNotifications, markAllNotificationsRead, subscribeToNotifications, type Notification } from '@/lib/api';
+import { useAuth } from '@/lib/auth-context';
 
 export default function Header({ toggleMobile }: { toggleMobile: () => void }) {
+  const [showNotifs, setShowNotifs] = useState(false);
+  const [notifs, setNotifs] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    getNotifications()
+      .then(n => {
+        setNotifs(n);
+        setUnreadCount(n.filter(x => !x.is_read).length);
+      })
+      .catch(() => {});
+  }, []);
+
+  // Realtime: listen for new notifications
+  useEffect(() => {
+    if (!user?.id) return;
+    const sub = subscribeToNotifications(user.id, (newNotif) => {
+      setNotifs(prev => [newNotif, ...prev]);
+      setUnreadCount(prev => prev + 1);
+    });
+    return () => sub.unsubscribe();
+  }, [user?.id]);
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setShowNotifs(false);
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  const handleMarkAllRead = async () => {
+    try {
+      await markAllNotificationsRead();
+      setNotifs(prev => prev.map(n => ({ ...n, is_read: true })));
+      setUnreadCount(0);
+    } catch {}
+  };
+
   return (
-    <header className="fixed top-0 right-0 w-full lg:w-[calc(100%-16rem)] h-16 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl flex justify-between items-center px-4 lg:px-8 shadow-sm dark:shadow-none">
+    <header className="fixed top-0 right-0 w-full lg:w-[calc(100%-16rem)] h-16 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl flex justify-between items-center px-4 lg:px-8 shadow-sm dark:shadow-none border-b border-slate-100 dark:border-slate-800 transition-colors duration-300">
       <div className="flex items-center gap-4 flex-1">
-        <button className="lg:hidden text-outline hover:text-primary transition-colors mt-1" onClick={toggleMobile}>
+        <button className="lg:hidden text-outline dark:text-slate-400 hover:text-primary transition-colors" onClick={toggleMobile}>
           <span className="material-symbols-outlined">menu</span>
         </button>
         <div className="relative w-full max-w-md hidden md:block">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline dark:text-slate-500 text-xl">search</span>
           <input 
-            className="w-full pl-10 pr-4 py-2 bg-surface-container-low dark:bg-surface-container-highest border-none rounded-full text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none text-on-surface" 
+            className="w-full pl-10 pr-4 py-2 bg-surface-container-low dark:bg-slate-800 border-none rounded-full text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none text-on-surface dark:text-slate-200 placeholder:text-slate-400" 
             placeholder="Search subscriptions..." 
             type="text" 
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-4 lg:gap-6">
-        <div className="flex items-center gap-2 lg:gap-4 lg:border-r border-outline-variant/30 lg:pr-6">
-          <button className="text-on-surface-variant hover:text-primary transition-colors active:scale-90">
+      <div className="flex items-center gap-3 lg:gap-6">
+        {/* Notifications */}
+        <div className="relative" ref={ref}>
+          <button 
+            className="text-on-surface-variant dark:text-slate-400 hover:text-primary dark:hover:text-blue-400 transition-colors active:scale-90 relative"
+            onClick={() => setShowNotifs(!showNotifs)}
+          >
             <span className="material-symbols-outlined">notifications</span>
+            {unreadCount > 0 && (
+              <motion.span 
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                className="absolute -top-1 -right-1 bg-error text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center"
+              >
+                {unreadCount}
+              </motion.span>
+            )}
           </button>
-          <button className="text-on-surface-variant hover:text-primary transition-colors active:scale-90 hidden sm:block">
-            <span className="material-symbols-outlined">help</span>
-          </button>
+
+          <AnimatePresence>
+            {showNotifs && (
+              <motion.div 
+                initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute right-0 top-12 w-80 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden z-50"
+              >
+                <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                  <h4 className="font-headline font-bold text-primary dark:text-white text-sm">Notifications</h4>
+                  {unreadCount > 0 && (
+                    <button onClick={handleMarkAllRead} className="text-surface-tint dark:text-blue-400 text-[10px] font-bold hover:underline">
+                      Mark all read
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {notifs.length === 0 ? (
+                    <div className="p-8 text-center">
+                      <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-3xl mb-2 block">notifications_off</span>
+                      <p className="text-xs text-on-surface-variant dark:text-slate-400">No notifications yet</p>
+                    </div>
+                  ) : (
+                    notifs.map((n, i) => (
+                      <motion.div 
+                        key={n.id}
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.04, duration: 0.25 }}
+                        className={`p-4 border-b border-slate-50 dark:border-slate-700/50 last:border-0 transition-colors ${!n.is_read ? 'bg-primary-fixed/30 dark:bg-slate-700/30' : 'hover:bg-slate-50 dark:hover:bg-slate-700/20'}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className="material-symbols-outlined text-sm mt-0.5 text-surface-tint dark:text-blue-400" style={{ fontVariationSettings: "'FILL' 1" }}>
+                            {n.type === 'renewal' ? 'event' : n.type === 'price_change' ? 'trending_up' : n.type === 'dormant' ? 'warning' : 'info'}
+                          </span>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-primary dark:text-white">{n.title}</p>
+                            <p className="text-[10px] text-on-surface-variant dark:text-slate-400 mt-0.5">{n.message}</p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    ))
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
+
+        <button className="text-on-surface-variant dark:text-slate-400 hover:text-primary dark:hover:text-blue-400 transition-colors active:scale-90 hidden sm:block">
+          <span className="material-symbols-outlined">help</span>
+        </button>
+        
         <div className="flex items-center gap-3">
-          <button className="px-4 py-2 lg:px-5 primary-gradient text-white text-sm font-semibold rounded-full active:opacity-80 transition-all shadow-sm">
+          <a href="/add" className="px-4 py-2 lg:px-5 primary-gradient text-white text-sm font-semibold rounded-full active:scale-[0.95] transition-all shadow-sm hover:shadow-md">
             <span className="hidden sm:inline">Add New</span>
-            <span className="material-symbols-outlined sm:hidden text-lg mb-[-4px]">add</span>
-          </button>
-          <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-surface-container-highest overflow-hidden border-2 border-white dark:border-slate-800 shadow-sm shrink-0">
-            <img 
-              alt="User Avatar" 
-              className="w-full h-full object-cover" 
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCwejpdhXmAqGo4DBJspfcNGlL1wxZ4nmOCLI_1FQXCWwm62Sb4kc-xR9ZKd89Hu23MPiRoEBR3inZspe23jrakP_kNwUdaDHWNPi9eJVi3a29CPv0E3ylQAxopJ0kP2J8bAiTZJuOEAJhW8CFFDScx0pI-NFC-cLBXuuFfMufKIJv29N90PwN7aNKHvChy9DambaO6I41fFLpwlUodqI6Rq8OFETC-BDR90fXRkGhboM7yhrAgcOv4P0hwlpVMNXBWL5BTDKL7Au-p" 
-            />
+            <span className="material-symbols-outlined sm:hidden text-lg" style={{ verticalAlign: '-3px' }}>add</span>
+          </a>
+          <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-surface-container-highest dark:bg-slate-700 overflow-hidden border-2 border-white dark:border-slate-800 shadow-sm shrink-0">
+            <div className="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white font-bold text-xs">
+              {user?.user_metadata?.full_name?.[0]?.toUpperCase() || 'U'}
+            </div>
           </div>
         </div>
       </div>

@@ -1,100 +1,196 @@
 "use client";
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/layout/DashboardLayout';
+import { useSettings } from '@/lib/settings-context';
+import { useAuth } from '@/lib/auth-context';
+import { getSubscriptions, updateSubscription, deleteSubscription, type Subscription } from '@/lib/api';
+
+const stagger = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.08 } },
+};
+const fadeUp = {
+  hidden: { opacity: 0, y: 16 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.22, 1, 0.36, 1] } },
+};
 
 export default function SubscriptionsList() {
-  const subs = [
-    { name: 'Spotify Premium', plan: 'Family Plan', amount: '$16.99', cycle: 'Monthly', status: 'Active', icon: 'music_note', img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDtbAiz28fj7_eHEB6eBOYDO7r_fmQN2Zx4YcKGkzhsGtf1m8D8494Ydrr_pYUvYZPN8LCABWTIqFSqkvAK3CtDvePkcJh-wmGzGo5s6dSD89gEizrRleB08Aepd8TcvmtjsnSKDBuoQn_mUOEs2I1DPFMEq_CXKcaRJXmhPzxBzk3fzcnvxhPuc-JB_tgYiW-e3VINkqnbZxADhPZzxBDtJDfoafxBlYzDxboK39b3WEPjvGRXAOC8iPMZKA2t0Wuy9z3fPy9pw084' },
-    { name: 'Netflix', plan: '4K Ultra HD', amount: '$22.99', cycle: 'Monthly', status: 'Paused', icon: 'movie', img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCWPSnAuV1In9wu4XosTdL_cIbUzj6UPK7uEsJpBsTbb1vB6Y3gFyF_F3YsYeb0hp5Tt2oQ_fzHYJikifQFpaCLKJHzT6AgyNinhEOUq3T920b63VUD5SxHUkuo3izSsBFToG50J6ilYGh-e9IA7lkbzBVUVkjbGKKGvQimhG6a5k23DLOTGgqsFXVOK9K0LXeLue17iXPinu-1fRQ8LFsP9SysAmCFw5-IpckdKMdsMkJimHjiwny6GTxWn36v7rIBwUJSpko_jw9j' },
-    { name: 'Adobe Creative Cloud', plan: 'All Apps Individual', amount: '$599.88', cycle: 'Annual', status: 'Active', icon: 'brush', img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCmo-18qfFKKPP_sm_qDUKjXcLplqX4CDLZ-6r0riAkGouwBPX9Ww2VX-yq2jNWsaSmpiBuwxUYEruvL2YzSUUWIBTvMsSX1n8muRi3zhdTZXi2Fteb_raDWOVcVUPZFrhYw1IyA-OQBm2IzcX-O8tkYIodRSv2B4Lz7BveCZ37f2LI1KlSYNLd0awdbdXNFHXCALzukOKph8txJGQeWF0jnp0Rk0X-46e65Oki_HjrPRDWSyi0fLKf4HCkqt2i9XDG3d_k7Dt7gj2c' },
-    { name: 'Google One', plan: '2TB Storage Plan', amount: '$9.99', cycle: 'Monthly', status: 'Active', icon: 'cloud', img: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDHD1voNyuoA_D4a994RfgzB8iqddgT6WLMcVUM8av7T6Ofi6x6c_jbrx_k-6QrIr55HnZkeLT28arW8u6ucYf-JPuMan_Co3Rb3LJLe352H40yVkQ9ARvlPpWpyz8_zlbeQn6icNlFXzWa6Dm_sgBxkfVpMxFI_g6NfF-kNnmn56fsb41bWsDuRTShSvK97ciFsqDvGmT9VKHpzcc9jjMq_mIXMee801V3mSWfqCDdo3BXmHXLaLfCGf9upJAbK1F3s56ilI94vbFr' }
+  const { formatAmount, compactView } = useSettings();
+  const { user } = useAuth();
+  const [subs, setSubs] = useState<Subscription[]>([]);
+  const [filter, setFilter] = useState<'All' | 'Active' | 'Paused'>('All');
+  const [loading, setLoading] = useState(true);
+
+  // Demo fallback data
+  const demoSubs: Subscription[] = [
+    { id: '1', user_id: '', name: 'Spotify Premium', amount: 16.99, currency: 'NGN', billing_cycle: 'Monthly', category: 'Entertainment', status: 'Active', start_date: '', next_renewal: null, logo_url: null, created_at: '' },
+    { id: '2', user_id: '', name: 'Netflix', amount: 22.99, currency: 'NGN', billing_cycle: 'Monthly', category: 'Entertainment', status: 'Paused', start_date: '', next_renewal: null, logo_url: null, created_at: '' },
+    { id: '3', user_id: '', name: 'Adobe Creative Cloud', amount: 599.88, currency: 'NGN', billing_cycle: 'Annual', category: 'Software & Tools', status: 'Active', start_date: '', next_renewal: null, logo_url: null, created_at: '' },
+    { id: '4', user_id: '', name: 'Google One', amount: 9.99, currency: 'NGN', billing_cycle: 'Monthly', category: 'Cloud Storage', status: 'Active', start_date: '', next_renewal: null, logo_url: null, created_at: '' },
   ];
+
+  useEffect(() => {
+    getSubscriptions()
+      .then(data => setSubs(data.length > 0 ? data : demoSubs))
+      .catch(() => setSubs(demoSubs))
+      .finally(() => setLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const filtered = filter === 'All' ? subs : subs.filter(s => s.status === filter);
+
+  const totalActive = subs
+    .filter(s => s.status === 'Active')
+    .reduce((sum, s) => {
+      const amt = Number(s.amount);
+      if (s.billing_cycle === 'Annual') return sum + amt / 12;
+      if (s.billing_cycle === 'Quarterly') return sum + amt / 3;
+      return sum + amt;
+    }, 0);
+
+  const handleToggleStatus = async (sub: Subscription) => {
+    const newStatus = sub.status === 'Active' ? 'Paused' : 'Active';
+    try {
+      await updateSubscription(sub.id, { status: newStatus });
+      setSubs(prev => prev.map(s => s.id === sub.id ? { ...s, status: newStatus as 'Active' | 'Paused' } : s));
+    } catch {
+      // For demo mode, just toggle locally
+      setSubs(prev => prev.map(s => s.id === sub.id ? { ...s, status: newStatus as 'Active' | 'Paused' } : s));
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteSubscription(id);
+      setSubs(prev => prev.filter(s => s.id !== id));
+    } catch {
+      setSubs(prev => prev.filter(s => s.id !== id));
+    }
+  };
+
+  const iconMap: Record<string, string> = {
+    'Entertainment': 'movie',
+    'Software & Tools': 'code',
+    'Cloud Storage': 'cloud',
+    'Information & News': 'newspaper',
+    'Lifestyle & Wellness': 'spa',
+    'Logistics & Transport': 'local_shipping',
+  };
 
   return (
     <DashboardLayout>
-      <div className="p-4 lg:p-10 pb-20 lg:pb-10 max-w-6xl mx-auto">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+      <motion.div variants={stagger} initial="hidden" animate="show" className="p-4 lg:p-10 pb-20 lg:pb-10 max-w-6xl mx-auto">
+        <motion.div variants={fadeUp} className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
           <div>
-            <h2 className="text-3xl lg:text-4xl font-extrabold font-headline tracking-tight text-primary mb-2">Subscriptions</h2>
-            <p className="text-sm lg:text-base text-on-surface-variant font-medium">Manage your recurring digital editorial assets.</p>
+            <h2 className="text-3xl lg:text-4xl font-extrabold font-headline tracking-tight text-primary dark:text-white mb-2">Subscriptions</h2>
+            <p className="text-sm lg:text-base text-on-surface-variant dark:text-slate-400 font-medium">Manage your recurring digital editorial assets.</p>
           </div>
-          <div className="flex w-full md:w-auto overflow-x-auto gap-2 p-1 bg-surface-container-low rounded-full no-scrollbar shrink-0">
-            <button className="px-5 py-2 bg-white shadow-sm rounded-full text-xs lg:text-sm font-bold text-primary transition-all whitespace-nowrap">All</button>
-            <button className="px-5 py-2 hover:bg-white/50 rounded-full text-xs lg:text-sm font-medium text-on-surface-variant transition-all whitespace-nowrap">Active</button>
-            <button className="px-5 py-2 hover:bg-white/50 rounded-full text-xs lg:text-sm font-medium text-on-surface-variant transition-all whitespace-nowrap">Paused</button>
+          <div className="flex w-full md:w-auto overflow-x-auto gap-2 p-1 bg-surface-container-low dark:bg-slate-800 rounded-full no-scrollbar shrink-0">
+            {(['All', 'Active', 'Paused'] as const).map(f => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-5 py-2 rounded-full text-xs lg:text-sm font-bold transition-all whitespace-nowrap ${
+                  filter === f
+                    ? 'bg-white dark:bg-slate-700 shadow-sm text-primary dark:text-white'
+                    : 'text-on-surface-variant dark:text-slate-400 hover:bg-white/50 dark:hover:bg-slate-700/50'
+                }`}
+              >
+                {f}
+              </button>
+            ))}
           </div>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 gap-4 lg:gap-6">
-          {subs.map((sub, i) => (
-            <div key={i} className="group flex flex-col lg:grid lg:grid-cols-12 items-start lg:items-center p-5 lg:p-6 bg-surface-container-lowest rounded-2xl hover:shadow-lg transition-all border-none gap-4 lg:gap-0 relative">
+          {filtered.map((sub, i) => (
+            <motion.div
+              key={sub.id}
+              variants={fadeUp}
+              layout
+              className={`group flex flex-col lg:grid lg:grid-cols-12 items-start lg:items-center ${compactView ? 'p-3 lg:p-4' : 'p-5 lg:p-6'} bg-surface-container-lowest dark:bg-slate-800 rounded-2xl hover:shadow-lg transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-600 gap-4 lg:gap-0 relative`}
+            >
               <div className="col-span-4 flex items-center gap-4 w-full">
-                <div className="w-12 h-12 lg:w-14 lg:h-14 shrink-0 rounded-xl bg-surface-container-high flex items-center justify-center overflow-hidden">
-                  {sub.img ? (
-                    <img alt="Service Logo" className="w-8 h-8 lg:w-10 lg:h-10 object-contain" src={sub.img} />
-                  ) : (
-                    <span className="material-symbols-outlined text-primary">{sub.icon}</span>
-                  )}
+                <div className={`${compactView ? 'w-10 h-10' : 'w-12 h-12 lg:w-14 lg:h-14'} shrink-0 rounded-xl bg-surface-container-high dark:bg-slate-700 flex items-center justify-center text-primary dark:text-blue-400`}>
+                  <span className="material-symbols-outlined">{iconMap[sub.category] || 'subscriptions'}</span>
                 </div>
                 <div>
-                  <h3 className="font-headline font-bold text-base lg:text-lg text-primary">{sub.name}</h3>
-                  <p className="text-[10px] lg:text-xs font-label text-on-surface-variant">{sub.plan}</p>
+                  <h3 className="font-headline font-bold text-base lg:text-lg text-primary dark:text-white">{sub.name}</h3>
+                  <p className="text-[10px] lg:text-xs font-label text-on-surface-variant dark:text-slate-400">{sub.category || 'General'}</p>
                 </div>
               </div>
               
               <div className="flex w-full lg:w-auto lg:contents justify-between gap-4 mt-2 lg:mt-0">
                 <div className="col-span-2">
-                  <p className="text-[10px] text-on-surface-variant font-label mb-1 uppercase tracking-wider hidden lg:block">Amount</p>
-                  <p className="font-headline font-bold text-base lg:text-lg text-on-surface">{sub.amount}</p>
+                  <p className="text-[10px] text-on-surface-variant dark:text-slate-400 font-label mb-1 uppercase tracking-wider hidden lg:block">Amount</p>
+                  <p className="font-headline font-bold text-base lg:text-lg text-on-surface dark:text-white">{formatAmount(Number(sub.amount))}</p>
                 </div>
                 
                 <div className="col-span-2">
-                  <p className="text-[10px] text-on-surface-variant font-label mb-1 uppercase tracking-wider hidden lg:block">Cycle</p>
-                  <span className={`px-2 py-1 lg:px-3 lg:py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ${sub.cycle === 'Annual' ? 'bg-primary-fixed text-on-primary-fixed-variant' : 'bg-secondary-container text-on-secondary-container'}`}>
-                    {sub.cycle}
+                  <p className="text-[10px] text-on-surface-variant dark:text-slate-400 font-label mb-1 uppercase tracking-wider hidden lg:block">Cycle</p>
+                  <span className={`px-2 py-1 lg:px-3 lg:py-1 rounded-full text-[10px] font-bold uppercase tracking-tight ${sub.billing_cycle === 'Annual' ? 'bg-primary-fixed text-on-primary-fixed-variant dark:bg-blue-900/50 dark:text-blue-300' : 'bg-secondary-container text-on-secondary-container dark:bg-slate-600 dark:text-slate-200'}`}>
+                    {sub.billing_cycle}
                   </span>
                 </div>
                 
                 <div className="col-span-2">
-                  <p className="text-[10px] text-on-surface-variant font-label mb-1 uppercase tracking-wider hidden lg:block">Status</p>
+                  <p className="text-[10px] text-on-surface-variant dark:text-slate-400 font-label mb-1 uppercase tracking-wider hidden lg:block">Status</p>
                   <div className="flex items-center gap-1.5">
-                    <span className={`w-2 h-2 rounded-full ${sub.status === 'Active' ? 'bg-tertiary-fixed' : 'bg-surface-dim'}`}></span>
-                    <span className={`text-xs lg:text-sm font-semibold ${sub.status === 'Active' ? 'text-on-surface' : 'text-on-surface-variant'}`}>{sub.status}</span>
+                    <motion.span 
+                      animate={{ scale: sub.status === 'Active' ? [1, 1.3, 1] : 1 }}
+                      transition={{ repeat: sub.status === 'Active' ? Infinity : 0, duration: 2 }}
+                      className={`w-2 h-2 rounded-full ${sub.status === 'Active' ? 'bg-tertiary-fixed' : 'bg-surface-dim'}`}
+                    />
+                    <span className={`text-xs lg:text-sm font-semibold ${sub.status === 'Active' ? 'text-on-surface dark:text-white' : 'text-on-surface-variant dark:text-slate-400'}`}>{sub.status}</span>
                   </div>
                 </div>
               </div>
 
               {/* Actions */}
               <div className="col-span-2 flex justify-end gap-1 lg:gap-2 absolute lg:relative top-5 right-5 lg:top-auto lg:right-auto lg:opacity-0 group-hover:opacity-100 transition-opacity">
-                <button className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors">
-                  <span className="material-symbols-outlined text-lg lg:text-xl">edit</span>
-                </button>
-                <button className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high text-on-surface-variant transition-colors">
+                <motion.button
+                  whileTap={{ scale: 0.85 }}
+                  onClick={() => handleToggleStatus(sub)}
+                  className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center rounded-full hover:bg-surface-container-high dark:hover:bg-slate-600 text-on-surface-variant dark:text-slate-400 transition-colors"
+                >
                   <span className="material-symbols-outlined text-lg lg:text-xl">{sub.status === 'Active' ? 'pause_circle' : 'play_circle'}</span>
-                </button>
-                <button className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center rounded-full hover:bg-error-container/20 text-error transition-colors">
-                  <span className="material-symbols-outlined text-lg lg:text-xl">cancel</span>
-                </button>
+                </motion.button>
+                <motion.button
+                  whileTap={{ scale: 0.85 }}
+                  onClick={() => handleDelete(sub.id)}
+                  className="w-8 h-8 lg:w-10 lg:h-10 flex items-center justify-center rounded-full hover:bg-error-container/20 text-error transition-colors"
+                >
+                  <span className="material-symbols-outlined text-lg lg:text-xl">delete</span>
+                </motion.button>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
 
-        <div className="mt-8 lg:mt-12 p-6 lg:p-8 glass-card rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+        <motion.div variants={fadeUp} className="mt-8 lg:mt-12 p-6 lg:p-8 glass-card dark:bg-slate-800/50 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-slate-100 dark:border-slate-700/50">
           <div className="flex items-center gap-4 lg:gap-6">
             <div className="w-12 h-12 lg:w-16 lg:h-16 shrink-0 rounded-full primary-gradient flex items-center justify-center text-white shadow-xl">
               <span className="material-symbols-outlined text-2xl lg:text-3xl">payments</span>
             </div>
             <div>
-              <h4 className="font-headline font-bold text-lg lg:text-xl text-primary">Monthly Forecast</h4>
-              <p className="text-xs lg:text-sm text-on-surface-variant font-medium">Estimated spend based on active cycles.</p>
+              <h4 className="font-headline font-bold text-lg lg:text-xl text-primary dark:text-white">Monthly Forecast</h4>
+              <p className="text-xs lg:text-sm text-on-surface-variant dark:text-slate-400 font-medium">Estimated spend based on active cycles.</p>
             </div>
           </div>
           <div className="text-left md:text-right w-full md:w-auto pl-16 md:pl-0">
-            <p className="text-[10px] lg:text-xs font-bold text-primary-container uppercase tracking-widest mb-1 font-label">Total Projection</p>
-            <p className="text-3xl lg:text-4xl font-extrabold font-headline text-primary">$108.96</p>
+            <p className="text-[10px] lg:text-xs font-bold text-primary-container dark:text-blue-400 uppercase tracking-widest mb-1 font-label">Total Projection</p>
+            <motion.p 
+              key={totalActive}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-3xl lg:text-4xl font-extrabold font-headline text-primary dark:text-white"
+            >
+              {formatAmount(totalActive)}
+            </motion.p>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </DashboardLayout>
   );
 }
