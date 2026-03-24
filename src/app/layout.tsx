@@ -8,8 +8,8 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope' });
 
 export const metadata: Metadata = {
-  title: 'Financial Editorial - Subscription Tracker',
-  description: 'Curated subscription dashboard for tracking and managing your recurring services.',
+  title: 'SUB TRACK',
+  description: 'SO YOU WONT OVER SPEND MADE BY ITACHI.',
 };
 
 export default function RootLayout({
@@ -19,7 +19,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${manrope.variable} bg-surface dark:bg-[#0f1115] font-body text-on-surface dark:text-slate-200 antialiased transition-colors duration-300`}>
+      <body className={`${inter.variable} ${manrope.variable} bg-surface dark:bg-[#0f1115] font-body text-on-surface dark:text-slate-200 antialiased transition-colors duration-300 overflow-x-hidden`}>
         <AuthProvider>
           <SettingsProvider>
             {children}

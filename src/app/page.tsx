@@ -1,9 +1,11 @@
 "use client";
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useSettings } from '@/lib/settings-context';
 import { getSubscriptions, type Subscription } from '@/lib/api';
+import OPayCard from '@/components/OPayCard';
 
 const stagger = {
   hidden: { opacity: 0 },
@@ -155,20 +157,41 @@ export default function Dashboard() {
                 </motion.div>
               ))}
             </div>
-            <button className="mt-8 w-full bg-white/10 hover:bg-white/20 py-3 rounded-full text-xs lg:text-sm font-bold transition-colors">
+            <Link href="/calendar" className="mt-8 w-full block text-center bg-white/10 hover:bg-white/20 py-3 rounded-full text-xs lg:text-sm font-bold transition-colors">
               View Calendar
-            </button>
+            </Link>
           </motion.div>
 
           {/* Sector Distribution */}
           <motion.div variants={fadeUp} className="col-span-12 lg:col-span-5 bg-surface-container-low dark:bg-slate-800 rounded-2xl p-6 lg:p-8">
             <h4 className="font-headline text-lg lg:text-xl font-bold text-primary dark:text-white mb-6">Sector Distribution</h4>
             <div className="space-y-4">
-              {[
-                { name: 'Software & SaaS', amount: 642.00, pct: 65, color: 'bg-surface-tint' },
-                { name: 'Entertainment', amount: 184.20, pct: 25, color: 'bg-error' },
-                { name: 'Core Utilities', amount: 422.30, pct: 40, color: 'bg-on-tertiary-container' },
-              ].map((cat, i) => (
+              {(hasSubs ? 
+                Object.entries(
+                  activeSubs.reduce((acc, s) => {
+                    const cat = s.category || 'General';
+                    const amt = Number(s.amount);
+                    let monthlyAmt = amt;
+                    if (s.billing_cycle === 'Annual') monthlyAmt = amt / 12;
+                    if (s.billing_cycle === 'Quarterly') monthlyAmt = amt / 3;
+                    acc[cat] = (acc[cat] || 0) + monthlyAmt;
+                    return acc;
+                  }, {} as Record<string, number>)
+                ).map(([name, amount], index) => {
+                  const colors = ['bg-surface-tint', 'bg-error', 'bg-on-tertiary-container', 'bg-secondary', 'bg-tertiary'];
+                  return { 
+                    name, 
+                    amount, 
+                    pct: totalMonthly > 0 ? (amount / totalMonthly) * 100 : 0, 
+                    color: colors[index % colors.length] 
+                  };
+                })
+                : [
+                  { name: 'Software & SaaS', amount: 642.00, pct: 65, color: 'bg-surface-tint' },
+                  { name: 'Entertainment', amount: 184.20, pct: 25, color: 'bg-error' },
+                  { name: 'Core Utilities', amount: 422.30, pct: 40, color: 'bg-on-tertiary-container' },
+                ]
+              ).map((cat, i) => (
                 <motion.div 
                   key={i}
                   initial={{ opacity: 0, x: -16 }}
@@ -230,6 +253,34 @@ export default function Dashboard() {
               ))}
             </div>
           </motion.div>
+          {/* Donation Section */}
+          <div className="col-span-12 grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+            {/* OPay Donation Component */}
+            <motion.div variants={fadeUp} className="bg-surface-container-lowest dark:bg-slate-800 rounded-2xl p-6 lg:p-8 shadow-sm border border-slate-100 dark:border-slate-700/50 flex flex-col justify-center">
+              <div className="mb-6">
+                <h4 className="font-headline text-lg lg:text-xl font-bold text-primary dark:text-white">Support the Project</h4>
+                <p className="text-xs text-on-surface-variant dark:text-slate-400 mt-1">Send a donation via the account below to help keep the tracker alive.</p>
+              </div>
+              <OPayCard />
+            </motion.div>
+
+            {/* Google Ads Component */}
+            <motion.div variants={fadeUp} className="bg-surface-container-lowest dark:bg-slate-800 rounded-2xl p-6 lg:p-8 shadow-sm border border-slate-100 dark:border-slate-700/50 flex flex-col justify-center items-center relative overflow-hidden min-h-[300px]">
+              <div className="absolute top-4 left-6">
+                <span className="text-[10px] font-bold text-on-surface-variant dark:text-slate-400 uppercase tracking-widest">Sponsored</span>
+              </div>
+              <div className="w-full flex items-center justify-center mt-4 pt-4">
+                <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2058540379247198" crossOrigin="anonymous"></script>
+                <ins className="adsbygoogle"
+                     style={{ display: "block", width: "100%", height: "250px" }}
+                     data-ad-client="ca-pub-2058540379247198"
+                     data-ad-slot="f08c47fec0942fa0"
+                     data-ad-format="auto"
+                     data-full-width-responsive="true"></ins>
+                <script dangerouslySetInnerHTML={{ __html: "(window.adsbygoogle = window.adsbygoogle || []).push({});" }} />
+              </div>
+            </motion.div>
+          </div>
         </div>
       </motion.div>
       

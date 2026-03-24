@@ -39,8 +39,8 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boo
       >
         <div className="mb-8 px-2 flex justify-between items-center">
           <div>
-            <h1 className="text-xl font-extrabold tracking-tight text-[#002B5C] dark:text-blue-100 font-headline">The Editorial</h1>
-            <p className="font-label text-xs text-slate-500 dark:text-slate-400">Financial Curator</p>
+            <h1 className="text-xl font-extrabold tracking-tight text-[#002B5C] dark:text-blue-100 font-headline">SUB TRACK</h1>
+            <p className="font-label text-xs text-slate-500 dark:text-slate-400">SO YOU WONT OVER SPEND MADE BY ITACHI.</p>
           </div>
           <button className="lg:hidden text-slate-400 hover:text-slate-600 transition-colors p-1" onClick={() => setMobileOpen(false)}>
             <span className="material-symbols-outlined">close</span>

@@ -41,8 +41,8 @@ export default function SignUp() {
         className="max-w-md w-full"
       >
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-extrabold font-headline text-primary dark:text-white">The Editorial</h1>
-          <p className="text-xs text-on-surface-variant dark:text-slate-400 mt-1">Financial Curator</p>
+          <h1 className="text-2xl font-extrabold font-headline text-primary dark:text-white">SUB TRACK</h1>
+          <p className="text-xs text-on-surface-variant dark:text-slate-400 mt-1">SO YOU WONT OVER SPEND MADE BY ITACHI.</p>
         </div>
 
         <div className="bg-surface-container-lowest dark:bg-slate-800/80 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700/50">
