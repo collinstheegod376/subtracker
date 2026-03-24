@@ -1,12 +1,38 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import { useSettings } from '@/lib/settings-context';
+import { useAuth } from '@/lib/auth-context';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { compactView } = useSettings();
+  const { user, loading } = useAuth();
+  const router = useRouter();
+
+  // Protect routes when Supabase is configured
+  useEffect(() => {
+    if (isSupabaseConfigured && !loading && !user) {
+      router.push('/login');
+    }
+  }, [loading, user, router]);
+
+  // Show loading spinner while checking auth state
+  if (isSupabaseConfigured && loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-[#0f1115]">
+        <div className="w-8 h-8 rounded-full border-4 border-primary dark:border-blue-400 border-t-transparent animate-spin"></div>
+      </div>
+    );
+  }
+
+  // Prevent flash of protected content during redirect
+  if (isSupabaseConfigured && !user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-surface dark:bg-[#0f1115] transition-colors duration-300">
