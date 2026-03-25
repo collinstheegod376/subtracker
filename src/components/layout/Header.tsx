@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getNotifications, markAllNotificationsRead, subscribeToNotifications, type Notification } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
 
+import Image from 'next/image';
+
 export default function Header({ toggleMobile }: { toggleMobile: () => void }) {
   const [showNotifs, setShowNotifs] = useState(false);
   const [notifs, setNotifs] = useState<Notification[]>([]);
@@ -143,7 +145,7 @@ export default function Header({ toggleMobile }: { toggleMobile: () => void }) {
           </a>
           <a href="/settings" className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-surface-container-highest dark:bg-slate-700 overflow-hidden border-2 border-white dark:border-slate-800 shadow-sm shrink-0 flex items-center justify-center hover:ring-2 hover:ring-primary/20 transition-all active:scale-95">
             {user?.user_metadata?.avatar_url ? (
-              <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+              <Image src={user.user_metadata.avatar_url} alt="Profile" width={40} height={40} unoptimized className="w-full h-full object-cover" />
             ) : (
               <div className="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white font-bold text-xs uppercase">
                 {user?.user_metadata?.full_name?.[0] || user?.email?.[0] || 'U'}

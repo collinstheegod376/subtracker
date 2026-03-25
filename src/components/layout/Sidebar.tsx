@@ -4,6 +4,8 @@ import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import Image from 'next/image';
+
 export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boolean; setMobileOpen: (v: boolean) => void }) {
   const pathname = usePathname();
 
@@ -39,7 +41,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boo
         )}
       >
         <div className="mb-8 px-2 flex justify-between items-center">
-          <img src="/logo.png" alt="SUB TRACK" className="h-10 lg:h-12 w-auto object-contain drop-shadow-sm rounded-lg" />
+          <Image src="/logo.png" alt="SUB TRACK" width={150} height={48} className="h-10 lg:h-12 w-auto object-contain drop-shadow-sm rounded-lg" />
           <button className="lg:hidden text-slate-400 hover:text-slate-600 transition-colors p-1" onClick={() => setMobileOpen(false)}>
             <span className="material-symbols-outlined">close</span>
           </button>

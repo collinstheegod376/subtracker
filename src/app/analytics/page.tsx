@@ -18,6 +18,8 @@ const scaleIn = {
   show: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
 };
 
+import Image from 'next/image';
+
 export default function Analytics() {
   const { formatAmount } = useSettings();
   const [subs, setSubs] = useState<Subscription[]>([]);
@@ -259,9 +261,9 @@ export default function Analytics() {
             </motion.div>
             <div className="col-span-1 lg:col-span-3 bg-surface-container-low dark:bg-slate-800 p-6 lg:p-8 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-slate-100 dark:border-slate-700/50">
               <div className="flex items-center gap-4 lg:gap-6">
-                <div className="w-14 h-14 lg:w-16 lg:h-16 shrink-0 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center shadow-sm text-primary dark:text-blue-400 overflow-hidden">
+                <div className="w-14 h-14 lg:w-16 lg:h-16 shrink-0 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center shadow-sm text-primary dark:text-blue-400 overflow-hidden relative">
                   {stats?.nextBig?.logo_url ? (
-                    <img src={stats.nextBig.logo_url} className="w-full h-full object-cover" alt="Logo" />
+                    <Image src={stats.nextBig.logo_url} fill unoptimized className="object-cover" alt="Logo" />
                   ) : (
                     <span className="material-symbols-outlined text-2xl lg:text-3xl">calendar_today</span>
                   )}

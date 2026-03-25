@@ -31,6 +31,8 @@ const fadeUp = {
   show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
 };
 
+import Image from 'next/image';
+
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('account');
   const { darkMode, setDarkMode, compactView, setCompactView, currency, setCurrency, notifications, setNotification } = useSettings();
@@ -39,6 +41,7 @@ export default function Settings() {
   const [firstName, setFirstName] = useState(user?.user_metadata?.full_name?.split(' ')[0] || 'Alex');
   const [lastName, setLastName] = useState(user?.user_metadata?.full_name?.split(' ')[1] || 'Rivera');
   const [email, setEmail] = useState(user?.email || 'alex.rivera@example.com');
+  const [avatarUrl, setAvatarUrl] = useState(user?.user_metadata?.avatar_url || '');
   const [saveStatus, setSaveStatus] = useState('');
 
   const [currentPw, setCurrentPw] = useState('');
@@ -50,7 +53,7 @@ export default function Settings() {
     try {
       await supabase.auth.updateUser({ 
         email,
-        data: { full_name: `${firstName} ${lastName}` }
+        data: { full_name: `${firstName} ${lastName}`, avatar_url: avatarUrl }
       });
       setSaveStatus('saved');
       setTimeout(() => setSaveStatus(''), 2000);
@@ -116,8 +119,15 @@ export default function Settings() {
               <motion.div initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.35 }} className="bg-surface-container-lowest dark:bg-slate-800 p-6 lg:p-8 rounded-2xl shadow-sm space-y-6 border border-slate-100 dark:border-slate-700/50">
                 <h3 className="font-headline font-bold text-xl text-primary dark:text-white border-b border-surface-variant dark:border-slate-700 pb-4">Account Information</h3>
                 <div className="flex flex-col sm:flex-row items-center gap-6">
-                  <div className="w-24 h-24 rounded-full bg-surface-container-high dark:bg-slate-700 overflow-hidden shadow-xl border-4 border-white dark:border-slate-800 shrink-0">
-                    <img src={user?.user_metadata?.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'} alt="avatar" className="w-full h-full object-cover" />
+                  <div className="w-24 h-24 rounded-full bg-surface-container-high dark:bg-slate-700 overflow-hidden shadow-xl border-4 border-white dark:border-slate-800 shrink-0 relative">
+                    <Image 
+                      src={avatarUrl || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80'} 
+                      alt="avatar" 
+                      width={96}
+                      height={96}
+                      unoptimized
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="flex-1 space-y-3 w-full">
                     <label className="block text-[10px] font-bold text-on-surface-variant dark:text-slate-400 uppercase tracking-widest">Profile Photo URL</label>
@@ -125,20 +135,17 @@ export default function Settings() {
                       <input 
                         type="text" 
                         placeholder="Paste image URL here..."
-                        defaultValue={user?.user_metadata?.avatar_url || ''} 
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setFirstName(prev => prev); // dummy to trigger re-render? No, I should use a state for avatar
-                        }}
-                        onBlur={async (e) => {
-                          const val = e.target.value;
-                          if (val) {
-                            await supabase.auth.updateUser({ data: { avatar_url: val } });
-                          }
-                        }}
+                        value={avatarUrl} 
+                        onChange={(e) => setAvatarUrl(e.target.value)}
                         className="flex-1 bg-surface-container-highest dark:bg-slate-700 rounded-xl px-4 py-2 border-none focus:ring-2 focus:ring-surface-tint dark:focus:ring-blue-500 outline-none text-xs text-on-surface dark:text-white transition-all" 
                       />
-                      <button className="px-4 py-2 bg-surface-container-high dark:bg-slate-700 hover:bg-surface-variant dark:hover:bg-slate-600 rounded-xl text-xs font-bold transition-colors text-on-surface dark:text-white">Preview</button>
+                      <button 
+                        type="button"
+                        onClick={() => window.open(avatarUrl, '_blank')}
+                        className="px-4 py-2 bg-surface-container-high dark:bg-slate-700 hover:bg-surface-variant dark:hover:bg-slate-600 rounded-xl text-xs font-bold transition-colors text-on-surface dark:text-white"
+                      >
+                        Preview
+                      </button>
                     </div>
                   </div>
                 </div>

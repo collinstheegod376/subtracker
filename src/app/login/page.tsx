@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth-context';
 import Link from 'next/link';
 
+import Image from 'next/image';
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -35,7 +37,7 @@ export default function Login() {
         className="max-w-md w-full"
       >
         <div className="flex justify-center mb-8">
-          <img src="/logo.png" alt="SUB TRACK" className="h-16 lg:h-20 w-auto object-contain drop-shadow-lg rounded-xl" />
+          <Image src="/logo.png" alt="SUB TRACK" width={200} height={80} className="h-16 lg:h-20 w-auto object-contain drop-shadow-lg rounded-xl" />
         </div>
 
         <div className="bg-surface-container-lowest dark:bg-slate-800/80 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700/50">
