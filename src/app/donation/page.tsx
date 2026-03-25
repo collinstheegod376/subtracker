@@ -15,26 +15,26 @@ const fadeUp = {
 export default function DonationPage() {
   return (
     <DashboardLayout>
-      <motion.div variants={stagger} initial="hidden" animate="show" className="p-4 lg:p-10 pb-20 lg:pb-10 space-y-8 lg:space-y-10">
-        <motion.section variants={fadeUp} className="flex flex-col gap-1">
-          <h2 className="font-headline text-3xl lg:text-4xl font-extrabold text-primary dark:text-white tracking-tight">Support the Project</h2>
-          <p className="font-body text-sm lg:text-base text-on-surface-variant dark:text-slate-400">Keep SUB TRACK alive with a donation or by supporting our sponsors.</p>
+      <motion.div variants={stagger} initial="hidden" animate="show" className="p-4 sm:p-6 lg:p-10 pb-20 lg:pb-10 space-y-6 sm:space-y-8 lg:space-y-10">
+        <motion.section variants={fadeUp} className="flex flex-col gap-0.5 sm:gap-1">
+          <h2 className="font-headline text-2xl sm:text-3xl lg:text-4xl font-extrabold text-primary dark:text-white tracking-tight">Support the Project</h2>
+          <p className="font-body text-xs sm:text-sm lg:text-base text-on-surface-variant dark:text-slate-400">Keep SUB TRACK alive with a donation or by supporting our sponsors.</p>
         </motion.section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-2 relative">
           {/* OPay Donation Component */}
-          <motion.div variants={fadeUp} className="bg-surface-container-lowest dark:bg-slate-800 rounded-2xl p-6 lg:p-8 shadow-sm border border-slate-100 dark:border-slate-700/50 flex flex-col justify-center">
-            <div className="mb-6">
-              <h4 className="font-headline text-lg lg:text-xl font-bold text-primary dark:text-white">Direct Transfer</h4>
-              <p className="text-xs text-on-surface-variant dark:text-slate-400 mt-1">Send a direct donation via the OPay account below.</p>
+          <motion.div variants={fadeUp} className="bg-surface-container-lowest dark:bg-slate-800 rounded-2xl p-5 sm:p-6 lg:p-8 shadow-sm border border-slate-100 dark:border-slate-700/50 flex flex-col justify-center">
+            <div className="mb-4 sm:mb-6">
+              <h4 className="font-headline text-base sm:text-lg lg:text-xl font-bold text-primary dark:text-white">Direct Transfer</h4>
+              <p className="text-[10px] sm:text-xs text-on-surface-variant dark:text-slate-400 mt-1">Send a direct donation via the OPay account below.</p>
             </div>
             <OPayCard />
           </motion.div>
 
           {/* Google Ads Component */}
-          <motion.div variants={fadeUp} className="bg-surface-container-lowest dark:bg-slate-800 rounded-2xl p-6 lg:p-8 shadow-sm border border-slate-100 dark:border-slate-700/50 flex flex-col justify-center items-center relative overflow-hidden min-h-[300px]">
-            <div className="absolute top-4 left-6">
-              <span className="text-[10px] font-bold text-on-surface-variant dark:text-slate-400 uppercase tracking-widest">Sponsored</span>
+          <motion.div variants={fadeUp} className="bg-surface-container-lowest dark:bg-slate-800 rounded-2xl p-5 sm:p-6 lg:p-8 shadow-sm border border-slate-100 dark:border-slate-700/50 flex flex-col justify-center items-center relative overflow-hidden min-h-[250px] sm:min-h-[300px]">
+            <div className="absolute top-3 sm:top-4 left-5 sm:left-6">
+              <span className="text-[9px] sm:text-[10px] font-bold text-on-surface-variant dark:text-slate-400 uppercase tracking-widest opacity-60">Sponsored</span>
             </div>
             <div className="w-full flex items-center justify-center mt-4 pt-4">
               <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2058540379247198" crossOrigin="anonymous"></script>
