@@ -68,26 +68,26 @@ export default function AddService() {
 
   return (
     <DashboardLayout>
-      <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-6xl mx-auto p-4 lg:p-10 pb-24">
-        <motion.div variants={fadeUp} className="mb-8 lg:mb-12">
-          <span className="inline-block px-3 py-1 bg-primary-fixed text-on-primary-fixed text-[10px] font-bold rounded-full mb-4 tracking-widest hidden lg:inline-block">NEW ENTRY</span>
-          <h2 className="text-3xl lg:text-4xl font-extrabold text-primary dark:text-white tracking-tight mb-2">Catalog a New Commitment</h2>
-          <p className="text-sm lg:text-base text-on-surface-variant dark:text-slate-400 font-medium max-w-xl">Each subscription is a chapter in your financial narrative. Define its scope and impact with precision.</p>
+      <motion.div variants={stagger} initial="hidden" animate="show" className="max-w-6xl mx-auto p-4 sm:p-6 lg:p-10 pb-24">
+        <motion.div variants={fadeUp} className="mb-6 sm:mb-10 lg:mb-12">
+          <span className="inline-block px-3 py-1 bg-primary-fixed text-on-primary-fixed text-[9px] sm:text-[10px] font-bold rounded-full mb-3 sm:mb-4 tracking-widest hidden lg:inline-block">NEW ENTRY</span>
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-primary dark:text-white tracking-tight mb-1.5 sm:mb-2">Catalog a New Commitment</h2>
+          <p className="text-xs sm:text-sm lg:text-base text-on-surface-variant dark:text-slate-400 font-medium max-w-xl">Each subscription is a chapter in your financial narrative. Define its scope and impact with precision.</p>
         </motion.div>
 
         <div className="grid grid-cols-12 gap-6 lg:gap-8">
           <motion.div variants={fadeUp} className="col-span-12 lg:col-span-8 space-y-6">
-            <div className="bg-surface-container-lowest dark:bg-slate-800 p-6 lg:p-8 rounded-2xl shadow-sm space-y-8 border border-slate-100 dark:border-slate-700/50">
+            <div className="bg-surface-container-lowest dark:bg-slate-800 p-5 sm:p-6 lg:p-8 rounded-2xl shadow-sm space-y-6 sm:space-y-8 border border-slate-100 dark:border-slate-700/50">
               {/* Success Message */}
               {status === 'success' && (
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="bg-tertiary-fixed/20 dark:bg-emerald-900/30 border border-tertiary-fixed/40 dark:border-emerald-700/40 rounded-xl p-6 text-center"
+                  className="bg-tertiary-fixed/20 dark:bg-emerald-900/30 border border-tertiary-fixed/40 dark:border-emerald-700/40 rounded-xl p-5 sm:p-6 text-center"
                 >
-                  <span className="material-symbols-outlined text-on-tertiary-container dark:text-emerald-400 text-4xl mb-2 block" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                  <p className="font-headline font-bold text-primary dark:text-white">Subscription Added!</p>
-                  <p className="text-xs text-on-surface-variant dark:text-slate-400 mt-1">Redirecting to your subscriptions...</p>
+                  <span className="material-symbols-outlined text-on-tertiary-container dark:text-emerald-400 text-3xl sm:text-4xl mb-2 block" style={{ fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                  <p className="font-headline font-bold text-sm sm:text-base text-primary dark:text-white">Subscription Added!</p>
+                  <p className="text-[10px] sm:text-xs text-on-surface-variant dark:text-slate-400 mt-1">Redirecting to your subscriptions...</p>
                 </motion.div>
               )}
 
@@ -96,7 +96,7 @@ export default function AddService() {
                 <motion.div
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
-                  className="bg-error-container dark:bg-red-900/30 text-on-error-container dark:text-red-300 text-xs font-medium px-4 py-3 rounded-xl"
+                  className="bg-error-container dark:bg-red-900/30 text-on-error-container dark:text-red-300 text-[10px] sm:text-xs font-medium px-4 py-3 rounded-xl"
                 >
                   {errorMsg}
                 </motion.div>
@@ -104,11 +104,11 @@ export default function AddService() {
 
               {status !== 'success' && (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 sm:gap-6">
                     <div className="sm:col-span-2">
-                      <label className="block text-[10px] font-bold text-on-surface-variant dark:text-slate-400 mb-2 tracking-widest uppercase">Service Identity</label>
+                      <label className="block text-[9px] sm:text-[10px] font-bold text-on-surface-variant dark:text-slate-400 mb-1.5 sm:mb-2 tracking-widest uppercase">Service Identity</label>
                       <input
-                        className="w-full bg-surface-container-highest dark:bg-slate-700 border-none focus:ring-2 focus:ring-surface-tint dark:focus:ring-blue-500 rounded-xl px-4 py-3 text-primary dark:text-white font-semibold transition-all outline-none"
+                        className="w-full bg-surface-container-highest dark:bg-slate-700 border-none focus:ring-2 focus:ring-surface-tint dark:focus:ring-blue-500 rounded-xl px-4 py-2.5 sm:py-3 text-sm sm:text-base text-primary dark:text-white font-semibold transition-all outline-none"
                         placeholder="e.g. Bloomberg Terminal"
                         type="text"
                         value={name}
@@ -116,11 +116,11 @@ export default function AddService() {
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-on-surface-variant dark:text-slate-400 mb-2 tracking-widest uppercase">Monetary Value</label>
+                      <label className="block text-[9px] sm:text-[10px] font-bold text-on-surface-variant dark:text-slate-400 mb-1.5 sm:mb-2 tracking-widest uppercase">Monetary Value</label>
                       <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary dark:text-blue-400 font-bold">{currencySymbol}</span>
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-primary dark:text-blue-400 font-bold text-sm sm:text-base">{currencySymbol}</span>
                         <input
-                          className="w-full bg-surface-container-highest dark:bg-slate-700 border-none focus:ring-2 focus:ring-surface-tint dark:focus:ring-blue-500 rounded-xl pl-8 pr-4 py-3 text-primary dark:text-white font-semibold outline-none"
+                          className="w-full bg-surface-container-highest dark:bg-slate-700 border-none focus:ring-2 focus:ring-surface-tint dark:focus:ring-blue-500 rounded-xl pl-8 sm:pl-9 pr-4 py-2.5 sm:py-3 text-sm sm:text-base text-primary dark:text-white font-semibold outline-none"
                           placeholder="0.00"
                           type="number"
                           step="0.01"
@@ -130,9 +130,9 @@ export default function AddService() {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-on-surface-variant dark:text-slate-400 mb-2 tracking-widest uppercase">Billing Cycle</label>
+                      <label className="block text-[9px] sm:text-[10px] font-bold text-on-surface-variant dark:text-slate-400 mb-1.5 sm:mb-2 tracking-widest uppercase">Billing Cycle</label>
                       <select
-                        className="w-full bg-surface-container-highest dark:bg-slate-700 border-none focus:ring-2 focus:ring-surface-tint dark:focus:ring-blue-500 rounded-xl px-4 py-3 text-primary dark:text-white font-semibold outline-none appearance-none cursor-pointer"
+                        className="w-full bg-surface-container-highest dark:bg-slate-700 border-none focus:ring-2 focus:ring-surface-tint dark:focus:ring-blue-500 rounded-xl px-4 py-2.5 sm:py-3 text-sm sm:text-base text-primary dark:text-white font-semibold outline-none appearance-none cursor-pointer"
                         value={billingCycle}
                         onChange={e => setBillingCycle(e.target.value)}
                       >
@@ -142,18 +142,18 @@ export default function AddService() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-on-surface-variant dark:text-slate-400 mb-2 tracking-widest uppercase">Inception Date</label>
+                      <label className="block text-[9px] sm:text-[10px] font-bold text-on-surface-variant dark:text-slate-400 mb-1.5 sm:mb-2 tracking-widest uppercase">Inception Date</label>
                       <input
-                        className="w-full bg-surface-container-highest dark:bg-slate-700 border-none focus:ring-2 focus:ring-surface-tint dark:focus:ring-blue-500 rounded-xl px-4 py-3 text-primary dark:text-white font-semibold outline-none cursor-pointer"
+                        className="w-full bg-surface-container-highest dark:bg-slate-700 border-none focus:ring-2 focus:ring-surface-tint dark:focus:ring-blue-500 rounded-xl px-4 py-2.5 sm:py-3 text-sm sm:text-base text-primary dark:text-white font-semibold outline-none cursor-pointer"
                         type="date"
                         value={startDate}
                         onChange={e => setStartDate(e.target.value)}
                       />
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-on-surface-variant dark:text-slate-400 mb-2 tracking-widest uppercase">Category Classification</label>
+                      <label className="block text-[9px] sm:text-[10px] font-bold text-on-surface-variant dark:text-slate-400 mb-1.5 sm:mb-2 tracking-widest uppercase">Category Classification</label>
                       <select
-                        className="w-full bg-surface-container-highest dark:bg-slate-700 border-none focus:ring-2 focus:ring-surface-tint dark:focus:ring-blue-500 rounded-xl px-4 py-3 text-primary dark:text-white font-semibold outline-none appearance-none cursor-pointer"
+                        className="w-full bg-surface-container-highest dark:bg-slate-700 border-none focus:ring-2 focus:ring-surface-tint dark:focus:ring-blue-500 rounded-xl px-4 py-2.5 sm:py-3 text-sm sm:text-base text-primary dark:text-white font-semibold outline-none appearance-none cursor-pointer"
                         value={category}
                         onChange={e => setCategory(e.target.value)}
                       >
@@ -167,10 +167,10 @@ export default function AddService() {
                       </select>
                     </div>
                   </div>
-                  <div className="pt-8 border-t border-surface-variant dark:border-slate-700 flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
+                  <div className="pt-6 sm:pt-8 border-t border-surface-variant dark:border-slate-700 flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
                     <button
                       onClick={handleDiscard}
-                      className="text-on-surface-variant dark:text-slate-400 text-sm font-semibold hover:text-primary dark:hover:text-white transition-colors w-full sm:w-auto py-3"
+                      className="text-on-surface-variant dark:text-slate-400 text-xs sm:text-sm font-bold hover:text-primary dark:hover:text-white transition-colors w-full sm:w-auto py-2.5 sm:py-3"
                     >
                       Discard Draft
                     </button>
@@ -178,7 +178,7 @@ export default function AddService() {
                       whileTap={{ scale: 0.95 }}
                       onClick={handleSubmit}
                       disabled={status === 'saving'}
-                      className="primary-gradient text-white px-10 py-3 rounded-full font-bold shadow-lg hover:shadow-xl transition-all active:scale-95 w-full sm:w-auto disabled:opacity-60"
+                      className="primary-gradient text-white px-8 sm:px-10 py-2.5 sm:py-3 rounded-full text-sm sm:text-base font-bold shadow-lg hover:shadow-xl transition-all active:scale-95 w-full sm:w-auto disabled:opacity-60"
                     >
                       {status === 'saving' ? 'Saving...' : 'Commit to Ledger'}
                     </motion.button>
@@ -189,10 +189,10 @@ export default function AddService() {
           </motion.div>
 
           <motion.div variants={fadeUp} className="col-span-12 lg:col-span-4 space-y-6">
-            <div className="bg-surface-container-low dark:bg-slate-800 p-6 lg:p-8 rounded-2xl space-y-6 border border-slate-100 dark:border-slate-700/50">
+            <div className="bg-surface-container-low dark:bg-slate-800 p-5 sm:p-6 lg:p-8 rounded-2xl space-y-5 sm:space-y-6 border border-slate-100 dark:border-slate-700/50">
               <div>
-                <label className="block text-[10px] font-bold text-on-surface-variant dark:text-slate-400 mb-4 tracking-widest uppercase">Quick Tips</label>
-                <div className="space-y-4">
+                <label className="block text-[9px] sm:text-[10px] font-bold text-on-surface-variant dark:text-slate-400 mb-3 sm:mb-4 tracking-widest uppercase">Quick Tips</label>
+                <div className="space-y-4 sm:space-y-5">
                   {[
                     { icon: 'lightbulb', text: 'Track annual costs monthly for better budgeting' },
                     { icon: 'notifications', text: 'Enable renewal alerts so you never miss a charge' },
@@ -205,8 +205,8 @@ export default function AddService() {
                       transition={{ delay: 0.4 + i * 0.12, duration: 0.4 }}
                       className="flex items-start gap-3"
                     >
-                      <span className="material-symbols-outlined text-surface-tint dark:text-blue-400 text-lg mt-0.5">{tip.icon}</span>
-                      <p className="text-xs text-on-surface-variant dark:text-slate-400 leading-relaxed">{tip.text}</p>
+                      <span className="material-symbols-outlined text-surface-tint dark:text-blue-400 text-base sm:text-lg mt-0.5">{tip.icon}</span>
+                      <p className="text-[10px] sm:text-xs text-on-surface-variant dark:text-slate-400 leading-relaxed font-medium">{tip.text}</p>
                     </motion.div>
                   ))}
                 </div>
