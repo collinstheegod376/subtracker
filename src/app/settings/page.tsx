@@ -1,5 +1,5 @@
 "use client";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useSettings, Currency } from '@/lib/settings-context';
@@ -38,11 +38,23 @@ export default function Settings() {
   const { darkMode, setDarkMode, compactView, setCompactView, currency, setCurrency, notifications, setNotification } = useSettings();
   const { user } = useAuth();
 
-  const [firstName, setFirstName] = useState(user?.user_metadata?.full_name?.split(' ')[0] || 'Alex');
-  const [lastName, setLastName] = useState(user?.user_metadata?.full_name?.split(' ')[1] || 'Rivera');
-  const [email, setEmail] = useState(user?.email || 'alex.rivera@example.com');
-  const [avatarUrl, setAvatarUrl] = useState(user?.user_metadata?.avatar_url || '');
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [email, setEmail] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
   const [saveStatus, setSaveStatus] = useState('');
+
+  // Sync state with user data
+  useEffect(() => {
+    if (user && !firstName && !lastName) { // Only sync if fields are empty to avoid overwriting user edits
+      const fullName = user.user_metadata?.full_name || '';
+      const parts = fullName.split(' ');
+      setFirstName(parts[0] || '');
+      setLastName(parts.slice(1).join(' ') || '');
+      setEmail(user.email || '');
+      setAvatarUrl(user.user_metadata?.avatar_url || '');
+    }
+  }, [user]);
 
   const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');

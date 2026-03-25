@@ -115,3 +115,38 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
+
+-- 7. Push Subscriptions Table (Web Push)
+CREATE TABLE IF NOT EXISTS public.push_subscriptions (
+  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id uuid REFERENCES auth.users NOT NULL,
+  endpoint text NOT NULL,
+  p256dh text NOT NULL,
+  auth text NOT NULL,
+  created_at timestamptz DEFAULT now() NOT NULL,
+  UNIQUE(user_id, endpoint)
+);
+
+ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own push subs" ON public.push_subscriptions
+  FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert own push subs" ON public.push_subscriptions
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update own push subs" ON public.push_subscriptions
+  FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete own push subs" ON public.push_subscriptions
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- 8. Add push_enabled to user_settings
+ALTER TABLE public.user_settings ADD COLUMN IF NOT EXISTS push_enabled boolean DEFAULT false;
+-- 9. Scheduled Reminders (Cron)
+-- To enable scheduling, run this in your Supabase SQL Editor:
+-- CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+-- Schedule the push-reminders function to run twice daily:
+-- Morning reminder at 9:00 AM UTC
+-- SELECT cron.schedule('push-reminders-morning', '0 9 * * *', 'SELECT net.http_post(url:=''https://<YOUR-PROJECT-ID>.supabase.co/functions/v1/push-reminders'', headers:=''{"Content-Type": "application/json", "Authorization": "Bearer <YOUR-SERVICE-ROLE-KEY>"}''::jsonb, body:='''')');
+
+-- Evening reminder at 6:00 PM UTC
+-- SELECT cron.schedule('push-reminders-evening', '0 18 * * *', 'SELECT net.http_post(url:=''https://<YOUR-PROJECT-ID>.supabase.co/functions/v1/push-reminders'', headers:=''{"Content-Type": "application/json", "Authorization": "Bearer <YOUR-SERVICE-ROLE-KEY>"}''::jsonb, body:='''')');
