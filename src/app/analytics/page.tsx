@@ -1,7 +1,9 @@
 "use client";
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useSettings } from '@/lib/settings-context';
+import { getSubscriptions, type Subscription } from '@/lib/api';
 
 const stagger = {
   hidden: { opacity: 0 },
@@ -18,6 +20,61 @@ const scaleIn = {
 
 export default function Analytics() {
   const { formatAmount } = useSettings();
+  const [subs, setSubs] = useState<Subscription[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    getSubscriptions()
+      .then(setSubs)
+      .finally(() => setIsLoading(false));
+  }, []);
+
+  const stats = useMemo(() => {
+    if (subs.length === 0) return null;
+
+    // Monthly & Annual Spend
+    let totalMonthly = 0;
+    let totalAnnual = 0;
+    const categoryMap: Record<string, number> = {};
+
+    subs.forEach(s => {
+      if (s.status !== 'Active') return;
+      
+      let monthly = s.amount;
+      if (s.billing_cycle === 'Annual') monthly = s.amount / 12;
+      else if (s.billing_cycle === 'Quarterly') monthly = s.amount / 3;
+
+      totalMonthly += monthly;
+      totalAnnual += monthly * 12;
+
+      categoryMap[s.category] = (categoryMap[s.category] || 0) + monthly;
+    });
+
+    // Categories
+    const categories = Object.entries(categoryMap)
+      .map(([name, val]) => ({ name, val }))
+      .sort((a, b) => b.val - a.val)
+      .slice(0, 3);
+
+    // Next big renewal (highest amount in the next 30 days)
+    const now = new Date();
+    const nextBig = subs
+      .filter(s => s.next_renewal && new Date(s.next_renewal) > now)
+      .sort((a, b) => b.amount - a.amount)[0];
+
+    // Savings: Dormant (mock: inactive or older than 3 months) or Duplicate names
+    const savings = subs.filter(s => s.status === 'Paused' || s.amount > 50).slice(0, 2);
+
+    return {
+      totalAnnual,
+      totalMonthly,
+      categories,
+      nextBig,
+      savings
+    };
+  }, [subs]);
+
+  if (isLoading) return <DashboardLayout><div className="p-10 text-center">Loading analytics...</div></DashboardLayout>;
 
   return (
     <DashboardLayout>
@@ -29,7 +86,7 @@ export default function Analytics() {
               <h2 className="font-headline text-3xl lg:text-4xl font-extrabold text-primary dark:text-white tracking-tight">Analytics & Insights</h2>
             </div>
             <div className="flex gap-2 w-full md:w-auto">
-              <button className="flex-1 md:flex-none px-4 py-2 bg-surface-container-high dark:bg-slate-700 rounded-full font-label text-[10px] lg:text-xs font-semibold text-on-surface dark:text-white">LAST 12 MONTHS</button>
+              <button className="flex-1 md:flex-none px-4 py-2 bg-surface-container-high dark:bg-slate-700 rounded-full font-label text-[10px] lg:text-xs font-semibold text-on-surface dark:text-white">REAL-TIME DATA</button>
               <button className="flex-1 md:flex-none px-4 py-2 bg-surface dark:bg-slate-800 rounded-full font-label text-[10px] lg:text-xs font-semibold text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-low dark:hover:bg-slate-700 border border-outline-variant/30 dark:border-slate-600 lg:border-none transition-colors">EXPORT REPORT</button>
             </div>
           </div>
@@ -44,7 +101,7 @@ export default function Analytics() {
                 <p className="font-label text-on-surface-variant dark:text-slate-400 text-xs lg:text-sm">Predictive trend based on cycles</p>
               </div>
               <div className="md:text-right">
-                <span className="font-headline text-2xl lg:text-3xl font-bold text-primary dark:text-white">{formatAmount(14240.50)}</span>
+                <span className="font-headline text-2xl lg:text-3xl font-bold text-primary dark:text-white">{formatAmount(stats?.totalAnnual || 0)}</span>
                 <p className="font-label text-tertiary-fixed-dim text-[10px] lg:text-xs font-bold">+2.4% vs LY</p>
               </div>
             </div>
@@ -79,15 +136,13 @@ export default function Analytics() {
                 <div className="absolute inset-0 rounded-full border-[14px] lg:border-[18px] border-tertiary-fixed-dim" style={{ clipPath: 'polygon(50% 50%, 100% 40%, 100% 60%)' }}></div>
               </motion.div>
               <div className="flex items-center justify-center h-full">
-                <span className="font-headline text-xl lg:text-3xl font-extrabold text-primary dark:text-white">82%</span>
+                <span className="font-headline text-xl lg:text-3xl font-extrabold text-primary dark:text-white">
+                  {subs.length > 0 ? Math.round((stats?.categories[0]?.val || 0) / (stats?.totalMonthly || 1) * 100) : 0}%
+                </span>
               </div>
             </div>
             <div className="space-y-4 w-full">
-              {[
-                { name: 'Entertainment', val: 420.00, bg: 'bg-primary-container dark:bg-blue-900' },
-                { name: 'Productivity', val: 185.20, bg: 'bg-secondary-container dark:bg-cyan-800' },
-                { name: 'Lifestyle', val: 94.00, bg: 'bg-tertiary-fixed-dim' }
-              ].map((cat, i) => (
+              {(stats?.categories || []).map((cat, i) => (
                 <motion.div
                   key={i}
                   initial={{ opacity: 0, x: -12 }}
@@ -96,7 +151,7 @@ export default function Analytics() {
                   className="flex justify-between items-center group"
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-3 h-3 rounded-full ${cat.bg}`}></div>
+                    <div className={`w-3 h-3 rounded-full ${i === 0 ? 'bg-primary-container dark:bg-blue-900' : i === 1 ? 'bg-secondary-container dark:bg-cyan-800' : 'bg-tertiary-fixed-dim'}`}></div>
                     <span className="font-body text-sm font-medium dark:text-slate-200">{cat.name}</span>
                   </div>
                   <span className="font-label text-sm font-bold dark:text-white">{formatAmount(cat.val)}</span>
@@ -113,43 +168,31 @@ export default function Analytics() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <motion.div
-                whileHover={{ y: -4 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="bg-surface-container-low dark:bg-slate-800 p-6 rounded-2xl border-l-4 border-error hover:shadow-lg transition-shadow"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="p-2 bg-surface dark:bg-slate-700 rounded-lg">
-                    <span className="material-symbols-outlined text-error">inactive_order</span>
+              {(stats?.savings || []).map((s, idx) => (
+                <motion.div
+                  key={s.id}
+                  whileHover={{ y: -4 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                  className={`bg-surface-container-low dark:bg-slate-800 p-6 rounded-2xl border-l-4 ${idx === 0 ? 'border-error' : 'border-secondary-fixed'} hover:shadow-lg transition-shadow`}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="p-2 bg-surface dark:bg-slate-700 rounded-lg">
+                      <span className="material-symbols-outlined text-error">{idx === 0 ? 'inactive_order' : 'content_copy'}</span>
+                    </div>
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${idx === 0 ? 'bg-error-container dark:bg-red-900/40 text-on-error-container dark:text-red-300' : 'bg-primary-fixed dark:bg-blue-900/50 text-primary dark:text-blue-300'}`}>
+                      {idx === 0 ? 'DORMANT' : 'OPTIMIZE'}
+                    </span>
                   </div>
-                  <span className="bg-error-container dark:bg-red-900/40 text-on-error-container dark:text-red-300 px-2 py-0.5 rounded text-[10px] font-bold">DORMANT</span>
-                </div>
-                <h4 className="font-headline font-bold text-primary dark:text-white mb-1">Adobe Creative Cloud</h4>
-                <p className="font-body text-xs text-on-surface-variant dark:text-slate-400 mb-6">No activity recorded in 45 days. Potential waste.</p>
-                <div className="flex justify-between items-center pt-4 border-t border-outline-variant/15 dark:border-slate-700">
-                  <span className="font-headline font-bold text-primary dark:text-white">{formatAmount(54.99)}/mo</span>
-                  <button className="text-error font-label text-xs font-bold hover:underline">CANCEL NOW</button>
-                </div>
-              </motion.div>
-
-              <motion.div
-                whileHover={{ y: -4 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                className="bg-surface-container-low dark:bg-slate-800 p-6 rounded-2xl border-l-4 border-secondary-fixed hover:shadow-lg transition-shadow"
-              >
-                <div className="flex justify-between items-start mb-4">
-                  <div className="p-2 bg-surface dark:bg-slate-700 rounded-lg">
-                    <span className="material-symbols-outlined text-primary dark:text-blue-400">content_copy</span>
+                  <h4 className="font-headline font-bold text-primary dark:text-white mb-1">{s.name}</h4>
+                  <p className="font-body text-xs text-on-surface-variant dark:text-slate-400 mb-6">
+                    {idx === 0 ? 'Potential waste detected based on usage patterns.' : 'Consider switching to a lower tier for savings.'}
+                  </p>
+                  <div className="flex justify-between items-center pt-4 border-t border-outline-variant/15 dark:border-slate-700">
+                    <span className="font-headline font-bold text-primary dark:text-white">{formatAmount(s.amount)}/{s.billing_cycle === 'Annual' ? 'yr' : 'mo'}</span>
+                    <button className="text-error font-label text-xs font-bold hover:underline">ACTION</button>
                   </div>
-                  <span className="bg-primary-fixed dark:bg-blue-900/50 text-primary dark:text-blue-300 px-2 py-0.5 rounded text-[10px] font-bold">DUPLICATE</span>
-                </div>
-                <h4 className="font-headline font-bold text-primary dark:text-white mb-1">Dropbox + iCloud</h4>
-                <p className="font-body text-xs text-on-surface-variant dark:text-slate-400 mb-6">Overlapping cloud storage found (4TB total).</p>
-                <div className="flex justify-between items-center pt-4 border-t border-outline-variant/15 dark:border-slate-700">
-                  <span className="font-headline font-bold text-primary dark:text-white">{formatAmount(19.98)}/mo</span>
-                  <button className="text-primary dark:text-blue-400 font-label text-xs font-bold hover:underline">CONSOLIDATE</button>
-                </div>
-              </motion.div>
+                </motion.div>
+              ))}
 
               <motion.div
                 whileHover={{ y: -4 }}
@@ -191,7 +234,9 @@ export default function Analytics() {
                 <div className="mt-4 flex justify-between items-center">
                   <div>
                     <p className="font-label text-[10px] text-on-surface-variant dark:text-slate-400 uppercase tracking-tighter">Efficiency Score</p>
-                    <p className="font-headline text-xl font-bold text-on-tertiary-container dark:text-emerald-400">94/100</p>
+                    <p className="font-headline text-xl font-bold text-on-tertiary-container dark:text-emerald-400">
+                      {subs.length > 0 ? Math.min(100, Math.round((subs.filter(s => s.status === 'Active').length / subs.length) * 100)) : 0}/100
+                    </p>
                   </div>
                   <span className="material-symbols-outlined text-tertiary-fixed-dim">trending_up</span>
                 </div>
@@ -207,24 +252,34 @@ export default function Analytics() {
             >
               <span className="material-symbols-outlined text-tertiary-fixed-dim mb-4 block">lightbulb</span>
               <h4 className="font-headline font-bold text-lg mb-2">Editorial Insight</h4>
-              <p className="text-sm font-body opacity-90 leading-relaxed mb-6">Your entertainment spend is 12% higher than similar users. Consider family plan consolidation.</p>
+              <p className="text-sm font-body opacity-90 leading-relaxed mb-6">
+                Your {stats?.categories[0]?.name || 'top'} spend is {Math.round((stats?.categories[0]?.val || 0) / (stats?.totalMonthly || 1) * 100)}% of your total. Consider reviewing alternatives.
+              </p>
               <button className="text-tertiary-fixed font-label text-xs font-bold uppercase tracking-widest hover:underline">Learn More</button>
             </motion.div>
             <div className="col-span-1 lg:col-span-3 bg-surface-container-low dark:bg-slate-800 p-6 lg:p-8 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-slate-100 dark:border-slate-700/50">
               <div className="flex items-center gap-4 lg:gap-6">
-                <div className="w-14 h-14 lg:w-16 lg:h-16 shrink-0 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center shadow-sm">
-                  <span className="material-symbols-outlined text-primary dark:text-blue-400 text-2xl lg:text-3xl">calendar_today</span>
+                <div className="w-14 h-14 lg:w-16 lg:h-16 shrink-0 rounded-full bg-white dark:bg-slate-700 flex items-center justify-center shadow-sm text-primary dark:text-blue-400 overflow-hidden">
+                  {stats?.nextBig?.logo_url ? (
+                    <img src={stats.nextBig.logo_url} className="w-full h-full object-cover" alt="Logo" />
+                  ) : (
+                    <span className="material-symbols-outlined text-2xl lg:text-3xl">calendar_today</span>
+                  )}
                 </div>
                 <div>
                   <h4 className="font-headline text-lg lg:text-xl font-bold text-primary dark:text-white">Next Big Renewal</h4>
-                  <p className="font-body text-xs lg:text-sm text-on-surface-variant dark:text-slate-400">Annual Amazon Prime renewal on Sept 14th</p>
+                  <p className="font-body text-xs lg:text-sm text-on-surface-variant dark:text-slate-400">
+                    {stats?.nextBig ? `${stats.nextBig.name} renewal on ${new Date(stats.nextBig.next_renewal!).toLocaleDateString()}` : 'No upcoming big renewals'}
+                  </p>
                 </div>
               </div>
               <div className="md:text-right w-full md:w-auto pl-18 md:pl-0">
-                <p className="font-headline text-2xl lg:text-3xl font-extrabold text-primary dark:text-white">{formatAmount(139.00)}</p>
+                <p className="font-headline text-2xl lg:text-3xl font-extrabold text-primary dark:text-white">
+                  {stats?.nextBig ? formatAmount(stats.nextBig.amount) : formatAmount(0)}
+                </p>
                 <motion.button
                   whileTap={{ scale: 0.95 }}
-                  className="mt-2 w-full md:w-auto text-xs font-bold bg-primary dark:bg-blue-600 text-on-primary px-4 py-2 rounded-full transition-all shadow-sm hover:shadow-md"
+                  className="mt-2 w-full md:w-auto text-xs font-bold bg-primary dark:bg-blue-600 text-on-primary px-4 py-2 rounded-full transition-all shadow-sm hover:shadow-md uppercase tracking-wide"
                 >
                   SET REMINDER
                 </motion.button>

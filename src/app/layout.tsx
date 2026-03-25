@@ -9,7 +9,10 @@ const manrope = Manrope({ subsets: ['latin'], variable: '--font-manrope' });
 
 export const metadata: Metadata = {
   title: 'SUB TRACK',
-  description: 'SO YOU WONT OVER SPEND MADE BY ITACHI.',
+  description: 'Manage and analyze your subscriptions. Next-gen monitoring for your spendings.',
+  manifest: '/manifest.json',
+  themeColor: '#2563eb',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
 };
 
 export default function RootLayout({
@@ -23,6 +26,20 @@ export default function RootLayout({
         <AuthProvider>
           <SettingsProvider>
             {children}
+            <script
+              dangerouslySetInnerHTML={{
+                __html: `
+                if ('serviceWorker' in navigator) {
+                  window.addEventListener('load', function() {
+                    navigator.serviceWorker.register('/sw.js').then(
+                      function(registration) { console.log('Service Worker registered with scope:', registration.scope); },
+                      function(err) { console.log('Service Worker registration failed:', err); }
+                    );
+                  });
+                }
+              `,
+              }}
+            />
           </SettingsProvider>
         </AuthProvider>
       </body>

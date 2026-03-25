@@ -141,11 +141,15 @@ export default function Header({ toggleMobile }: { toggleMobile: () => void }) {
             <span className="hidden sm:inline">Add New</span>
             <span className="material-symbols-outlined sm:hidden text-lg" style={{ verticalAlign: '-3px' }}>add</span>
           </a>
-          <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-surface-container-highest dark:bg-slate-700 overflow-hidden border-2 border-white dark:border-slate-800 shadow-sm shrink-0">
-            <div className="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white font-bold text-xs">
-              {user?.user_metadata?.full_name?.[0]?.toUpperCase() || 'U'}
-            </div>
-          </div>
+          <a href="/settings" className="w-8 h-8 lg:w-10 lg:h-10 rounded-full bg-surface-container-highest dark:bg-slate-700 overflow-hidden border-2 border-white dark:border-slate-800 shadow-sm shrink-0 flex items-center justify-center hover:ring-2 hover:ring-primary/20 transition-all active:scale-95">
+            {user?.user_metadata?.avatar_url ? (
+              <img src={user.user_metadata.avatar_url} alt="Profile" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white font-bold text-xs uppercase">
+                {user?.user_metadata?.full_name?.[0] || user?.email?.[0] || 'U'}
+              </div>
+            )}
+          </a>
         </div>
       </div>
     </header>
