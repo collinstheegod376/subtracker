@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useSettings, Currency } from '@/lib/settings-context';
@@ -44,15 +44,18 @@ export default function Settings() {
   const [avatarUrl, setAvatarUrl] = useState('');
   const [saveStatus, setSaveStatus] = useState('');
 
-  // Sync state with user data
+  // Sync state with user data (only once)
+  const hasSynced = useRef(false);
+
   useEffect(() => {
-    if (user && !firstName && !lastName) { // Only sync if fields are empty to avoid overwriting user edits
+    if (user && !hasSynced.current) { 
       const fullName = user.user_metadata?.full_name || '';
       const parts = fullName.split(' ');
       setFirstName(parts[0] || '');
       setLastName(parts.slice(1).join(' ') || '');
       setEmail(user.email || '');
       setAvatarUrl(user.user_metadata?.avatar_url || '');
+      hasSynced.current = true;
     }
   }, [user]);
 
