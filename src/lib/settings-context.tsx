@@ -24,6 +24,7 @@ interface SettingsContextType {
     priceChanges: boolean;
     weeklySummary: boolean;
     dormantWarning: boolean;
+    pushNotifications: boolean;
   };
   setNotification: (key: string, value: boolean) => void;
 }
@@ -39,6 +40,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     priceChanges: true,
     weeklySummary: false,
     dormantWarning: false,
+    pushNotifications: false,
   });
 
   // Load saved settings from localStorage
@@ -50,7 +52,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         if (parsed.darkMode !== undefined) setDarkModeState(parsed.darkMode);
         if (parsed.compactView !== undefined) setCompactView(parsed.compactView);
         if (parsed.currency) setCurrencyState(parsed.currency);
-        if (parsed.notifications) setNotifications(parsed.notifications);
+        if (parsed.notifications) {
+          setNotifications(prev => ({ ...prev, ...parsed.notifications }));
+        }
       }
     } catch {}
   }, []);
@@ -80,7 +84,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     return `${currencySymbol}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
-  const setNotification = (key: string, value: boolean) => {
+  const setNotification = async (key: string, value: boolean) => {
+    if (key === 'pushNotifications' && value === true) {
+      if ('Notification' in window) {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          console.warn('Notification permission denied');
+          return;
+        }
+      }
+    }
     setNotifications(prev => ({ ...prev, [key]: value }));
   };
 

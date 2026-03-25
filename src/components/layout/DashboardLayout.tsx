@@ -35,11 +35,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   return (
-    <div className="min-h-screen bg-surface dark:bg-[#0f1115] transition-colors duration-300">
+    <div className="h-screen bg-surface dark:bg-[#0f1115] transition-colors duration-300 overflow-hidden flex flex-col">
       <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
       <Header toggleMobile={() => setMobileOpen(true)} />
       {/* Main Content Area — compactView reduces padding */}
-      <main className={`lg:ml-64 pt-16 min-h-screen transition-all duration-300 ${compactView ? 'compact-layout' : ''}`}>
+      <main className={`lg:ml-64 pt-16 flex-1 overflow-y-auto transition-all duration-300 ${compactView ? 'compact-layout' : ''}`}>
         {children}
       </main>
     </div>
