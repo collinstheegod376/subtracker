@@ -2,8 +2,10 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getNotifications, markAllNotificationsRead, subscribeToNotifications, type Notification } from '@/lib/api';
+import { getSubscriptions, type Subscription } from '@/lib/api';
 import { useAuth } from '@/lib/auth-context';
-
+import { useSettings } from '@/lib/settings-context';
+import Link from 'next/link';
 import Image from 'next/image';
 
 export default function Header({ toggleMobile }: { toggleMobile: () => void }) {
@@ -12,6 +14,14 @@ export default function Header({ toggleMobile }: { toggleMobile: () => void }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+  const { formatAmount } = useSettings();
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [allSubs, setAllSubs] = useState<Subscription[]>([]);
+  const [searchResults, setSearchResults] = useState<Subscription[]>([]);
+  const [showSearch, setShowSearch] = useState(false);
+  const searchRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     getNotifications()
@@ -20,6 +30,7 @@ export default function Header({ toggleMobile }: { toggleMobile: () => void }) {
         setUnreadCount(n.filter(x => !x.is_read).length);
       })
       .catch(() => {});
+    getSubscriptions().then(setAllSubs).catch(() => {});
   }, []);
 
   // Realtime: listen for new notifications
@@ -35,10 +46,29 @@ export default function Header({ toggleMobile }: { toggleMobile: () => void }) {
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setShowNotifs(false);
+      if (searchRef.current && !searchRef.current.contains(e.target as Node)) setShowSearch(false);
     };
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Live search logic
+  useEffect(() => {
+    if (searchQuery.trim().length === 0) {
+      setSearchResults([]);
+      setShowSearch(false);
+      return;
+    }
+    const q = searchQuery.toLowerCase();
+    const results = allSubs.filter(s =>
+      s.name.toLowerCase().includes(q) ||
+      s.category?.toLowerCase().includes(q) ||
+      s.status.toLowerCase().includes(q) ||
+      s.billing_cycle.toLowerCase().includes(q)
+    );
+    setSearchResults(results);
+    setShowSearch(true);
+  }, [searchQuery, allSubs]);
 
   const handleMarkAllRead = async () => {
     try {
@@ -48,19 +78,79 @@ export default function Header({ toggleMobile }: { toggleMobile: () => void }) {
     } catch {}
   };
 
+  const statusColor = (status: string) => {
+    if (status === 'Active') return 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400';
+    if (status === 'Paused') return 'bg-amber-500/15 text-amber-600 dark:text-amber-400';
+    return 'bg-rose-500/15 text-rose-600 dark:text-rose-400';
+  };
+
   return (
     <header className="fixed top-0 right-0 w-full lg:w-[calc(100%-16rem)] h-16 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl flex justify-between items-center px-4 lg:px-8 shadow-sm dark:shadow-none border-b border-slate-100 dark:border-slate-800 transition-colors duration-300">
       <div className="flex items-center gap-4 flex-1">
         <button className="lg:hidden text-outline dark:text-slate-400 hover:text-primary transition-colors" onClick={toggleMobile}>
           <span className="material-symbols-outlined">menu</span>
         </button>
-        <div className="relative w-full max-w-md hidden md:block">
+        <div className="relative w-full max-w-md hidden md:block" ref={searchRef}>
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline dark:text-slate-500 text-xl">search</span>
           <input 
             className="w-full pl-10 pr-4 py-2 bg-surface-container-low dark:bg-slate-800 border-none rounded-full text-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none text-on-surface dark:text-slate-200 placeholder:text-slate-400" 
             placeholder="Search subscriptions..." 
-            type="text" 
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
+
+          <AnimatePresence>
+            {showSearch && searchResults.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -8, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute left-0 top-12 w-full bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden z-50"
+              >
+                <div className="p-3 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                  <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">{searchResults.length} result{searchResults.length !== 1 ? 's' : ''}</span>
+                  <Link href="/subscriptions" onClick={() => { setShowSearch(false); setSearchQuery(''); }} className="text-[10px] font-black text-primary dark:text-blue-400 uppercase tracking-widest hover:underline">View All</Link>
+                </div>
+                <div className="max-h-72 overflow-y-auto">
+                  {searchResults.slice(0, 6).map((sub) => (
+                    <Link
+                      key={sub.id}
+                      href="/subscriptions"
+                      onClick={() => { setShowSearch(false); setSearchQuery(''); }}
+                      className="flex items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-700/40 transition-colors border-b border-slate-50 dark:border-slate-700/30 last:border-0"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-primary/5 dark:bg-blue-500/10 flex items-center justify-center text-primary dark:text-blue-400 border border-primary/10 dark:border-blue-500/20 shrink-0">
+                          <span className="material-symbols-outlined text-base">subscriptions</span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-primary dark:text-white">{sub.name}</p>
+                          <p className="text-[10px] text-slate-500 dark:text-slate-400">{sub.category || 'General'} · {sub.billing_cycle}</p>
+                        </div>
+                      </div>
+                      <div className="text-right flex flex-col items-end gap-1">
+                        <span className="text-sm font-bold text-primary dark:text-white">{formatAmount(Number(sub.amount))}</span>
+                        <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${statusColor(sub.status)}`}>{sub.status}</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+            {showSearch && searchQuery.trim().length > 0 && searchResults.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: -8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                className="absolute left-0 top-12 w-full bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 overflow-hidden z-50 p-6 text-center"
+              >
+                <span className="material-symbols-outlined text-slate-300 dark:text-slate-600 text-3xl mb-2 block">search_off</span>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">No subscriptions found for &ldquo;{searchQuery}&rdquo;</p>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 

@@ -1,7 +1,6 @@
 "use client";
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import OPayCard from '@/components/OPayCard';
 
 const stagger = {
   hidden: { opacity: 0 },
@@ -22,13 +21,26 @@ export default function DonationPage() {
         </motion.section>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mt-2 relative">
-          {/* OPay Donation Component */}
-          <motion.div variants={fadeUp} className="bg-surface-container-lowest dark:bg-slate-800 rounded-2xl p-5 sm:p-6 lg:p-8 shadow-sm border border-slate-100 dark:border-slate-700/50 flex flex-col justify-center">
-            <div className="mb-4 sm:mb-6">
-              <h4 className="font-headline text-base sm:text-lg lg:text-xl font-bold text-primary dark:text-white">Direct Transfer</h4>
-              <p className="text-[10px] sm:text-xs text-on-surface-variant dark:text-slate-400 mt-1">Send a direct donation via the OPay account below.</p>
+          {/* Donation Info */}
+          <motion.div variants={fadeUp} className="bg-primary dark:bg-blue-600 rounded-3xl p-6 sm:p-8 lg:p-10 text-white shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+            <div className="relative z-10">
+              <span className="material-symbols-outlined text-3xl mb-4 block opacity-80">volunteer_activism</span>
+              <h3 className="font-headline text-2xl font-black mb-3">Help Us Grow</h3>
+              <p className="text-sm opacity-80 leading-relaxed mb-6">
+                SUB TRACK is a free tool built with passion. Your support helps us maintain servers, add new features, and keep the app running smoothly for everyone.
+              </p>
+              <div className="flex flex-wrap gap-3">
+                <a href="https://github.com/collinstheegod376/subtracker" target="_blank" rel="noopener noreferrer" className="bg-white/20 hover:bg-white/30 backdrop-blur-md px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border border-white/10 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base">star</span>
+                  Star on GitHub
+                </a>
+                <button className="bg-white/10 hover:bg-white/20 backdrop-blur-md px-5 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all border border-white/10 flex items-center gap-2">
+                  <span className="material-symbols-outlined text-base">share</span>
+                  Share App
+                </button>
+              </div>
             </div>
-            <OPayCard />
           </motion.div>
 
           {/* Google Ads Component */}

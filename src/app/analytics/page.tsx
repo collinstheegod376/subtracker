@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useSettings } from '@/lib/settings-context';
@@ -18,6 +18,8 @@ const scaleIn = {
   show: { opacity: 1, scale: 1, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
 };
 
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
 import Image from 'next/image';
 
 export default function Analytics() {
@@ -34,46 +36,80 @@ export default function Analytics() {
   const stats = useMemo(() => {
     if (subs.length === 0) return null;
 
-    // Monthly & Annual Spend
     let totalMonthly = 0;
     let totalAnnual = 0;
     const categoryMap: Record<string, number> = {};
 
     subs.forEach(s => {
       if (s.status !== 'Active') return;
-      
       let monthly = s.amount;
       if (s.billing_cycle === 'Annual') monthly = s.amount / 12;
       else if (s.billing_cycle === 'Quarterly') monthly = s.amount / 3;
-
       totalMonthly += monthly;
       totalAnnual += monthly * 12;
-
       categoryMap[s.category] = (categoryMap[s.category] || 0) + monthly;
     });
 
-    // Categories
     const categories = Object.entries(categoryMap)
       .map(([name, val]) => ({ name, val }))
       .sort((a, b) => b.val - a.val)
       .slice(0, 3);
 
-    // Next big renewal (highest amount in the next 30 days)
     const now = new Date();
     const nextBig = subs
       .filter(s => s.next_renewal && new Date(s.next_renewal) > now)
       .sort((a, b) => b.amount - a.amount)[0];
 
-    // Savings: Dormant (mock: inactive or older than 3 months) or Duplicate names
     const savings = subs.filter(s => s.status === 'Paused' || s.amount > 50).slice(0, 2);
+
+    // Monthly bar chart data: compute spend per month from subscription start dates
+    const monthlySpend = Array(12).fill(0);
+    subs.forEach(s => {
+      if (s.status !== 'Active') return;
+      let monthly = Number(s.amount);
+      if (s.billing_cycle === 'Annual') monthly = monthly / 12;
+      else if (s.billing_cycle === 'Quarterly') monthly = monthly / 3;
+      // Distribute across all months from start_date onwards
+      const startMonth = s.start_date ? new Date(s.start_date).getMonth() : 0;
+      for (let m = startMonth; m < 12; m++) {
+        monthlySpend[m] += monthly;
+      }
+    });
+    const maxSpend = Math.max(...monthlySpend, 1);
+    const barHeights = monthlySpend.map(v => Math.max(5, (v / maxSpend) * 100));
 
     return {
       totalAnnual,
       totalMonthly,
       categories,
       nextBig,
-      savings
+      savings,
+      barHeights,
+      monthlySpend
     };
+  }, [subs]);
+
+  const handleExport = useCallback(() => {
+    if (subs.length === 0) return;
+    const headers = ['Name','Amount','Currency','Billing Cycle','Category','Status','Start Date','Next Renewal'];
+    const rows = subs.map(s => [
+      s.name,
+      s.amount,
+      s.currency,
+      s.billing_cycle,
+      s.category || 'General',
+      s.status,
+      s.start_date || '',
+      s.next_renewal || ''
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `subscriptions_export_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
   }, [subs]);
 
   if (isLoading) return <DashboardLayout><div className="p-10 text-center">Loading analytics...</div></DashboardLayout>;
@@ -89,7 +125,7 @@ export default function Analytics() {
             </div>
             <div className="flex gap-2 w-full md:w-auto">
               <button className="flex-1 md:flex-none px-4 py-2 bg-surface-container-high dark:bg-slate-700 rounded-full font-label text-[9px] sm:text-[10px] lg:text-xs font-semibold text-on-surface dark:text-white">REAL-TIME DATA</button>
-              <button className="flex-1 md:flex-none px-4 py-2 bg-surface dark:bg-slate-800 rounded-full font-label text-[9px] sm:text-[10px] lg:text-xs font-semibold text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-low dark:hover:bg-slate-700 border border-outline-variant/30 dark:border-slate-600 lg:border-none transition-colors">EXPORT</button>
+              <button onClick={handleExport} className="flex-1 md:flex-none px-4 py-2 bg-surface dark:bg-slate-800 rounded-full font-label text-[9px] sm:text-[10px] lg:text-xs font-semibold text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-low dark:hover:bg-slate-700 border border-outline-variant/30 dark:border-slate-600 lg:border-none transition-colors flex items-center gap-1.5 justify-center"><span className="material-symbols-outlined text-sm">download</span>EXPORT CSV</button>
             </div>
           </div>
         </motion.section>
@@ -109,13 +145,14 @@ export default function Analytics() {
             </div>
 
             <div className="relative h-40 sm:h-48 lg:h-64 flex items-end justify-between gap-1 lg:gap-3 pt-4 border-b border-surface-container-highest dark:border-slate-600 pb-2">
-              {[40, 55, 35, 70, 60, 85, 95, 80, 65, 50, 45, 30].map((h, i) => (
+              {(stats?.barHeights || [40, 55, 35, 70, 60, 85, 95, 80, 65, 50, 45, 30]).map((h, i) => (
                 <motion.div
                   key={i}
                   initial={{ height: 0 }}
                   animate={{ height: `${h}%` }}
                   transition={{ duration: 0.6, delay: 0.1 + i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                  className={`flex-1 rounded-t-md sm:rounded-t-lg transition-colors hover:bg-primary-container dark:hover:bg-blue-800 cursor-pointer ${i === 6 ? 'bg-primary-container dark:bg-blue-700' : 'bg-surface-container-low dark:bg-slate-600'}`}
+                  className={`flex-1 rounded-t-md sm:rounded-t-lg transition-colors hover:bg-primary-container dark:hover:bg-blue-800 cursor-pointer group relative ${i === new Date().getMonth() ? 'bg-primary dark:bg-blue-600' : 'bg-surface-container-low dark:bg-slate-600'}`}
+                  title={`${MONTHS[i]}: ${formatAmount(stats?.monthlySpend?.[i] || 0)}`}
                 />
               ))}
             </div>
