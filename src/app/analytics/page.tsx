@@ -1,9 +1,12 @@
 "use client";
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useSettings } from '@/lib/settings-context';
 import { getSubscriptions, type Subscription } from '@/lib/api';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import Image from 'next/image';
 
 const stagger = {
   hidden: { opacity: 0 },
@@ -20,12 +23,11 @@ const scaleIn = {
 
 const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-import Image from 'next/image';
-
 export default function Analytics() {
-  const { formatAmount } = useSettings();
+  const { formatAmount, currency } = useSettings();
   const [subs, setSubs] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(new Date().getMonth());
 
   useEffect(() => {
     getSubscriptions()
@@ -62,19 +64,25 @@ export default function Analytics() {
 
     const savings = subs.filter(s => s.status === 'Paused' || s.amount > 50).slice(0, 2);
 
-    // Monthly bar chart data: compute spend per month from subscription start dates
     const monthlySpend = Array(12).fill(0);
+    const monthlyBreakdown: Record<number, Subscription[]> = {};
+    
     subs.forEach(s => {
       if (s.status !== 'Active') return;
       let monthly = Number(s.amount);
       if (s.billing_cycle === 'Annual') monthly = monthly / 12;
       else if (s.billing_cycle === 'Quarterly') monthly = monthly / 3;
-      // Distribute across all months from start_date onwards
+      
       const startMonth = s.start_date ? new Date(s.start_date).getMonth() : 0;
-      for (let m = startMonth; m < 12; m++) {
-        monthlySpend[m] += monthly;
+      for (let m = 0; m < 12; m++) {
+        if (m >= startMonth) {
+          monthlySpend[m] += monthly;
+          if (!monthlyBreakdown[m]) monthlyBreakdown[m] = [];
+          monthlyBreakdown[m].push(s);
+        }
       }
     });
+
     const maxSpend = Math.max(...monthlySpend, 1);
     const barHeights = monthlySpend.map(v => Math.max(5, (v / maxSpend) * 100));
 
@@ -85,32 +93,53 @@ export default function Analytics() {
       nextBig,
       savings,
       barHeights,
-      monthlySpend
+      monthlySpend,
+      monthlyBreakdown
     };
   }, [subs]);
 
-  const handleExport = useCallback(() => {
+  const handleExportPDF = useCallback(() => {
     if (subs.length === 0) return;
-    const headers = ['Name','Amount','Currency','Billing Cycle','Category','Status','Start Date','Next Renewal'];
-    const rows = subs.map(s => [
+    
+    const doc = new jsPDF();
+    const dateStr = new Date().toLocaleDateString();
+    
+    doc.setFontSize(20);
+    doc.setTextColor(33, 150, 243);
+    doc.text('Subscription Spending Report', 14, 22);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100);
+    doc.text(`Generated on: ${dateStr}`, 14, 30);
+    
+    doc.setFontSize(12);
+    doc.setTextColor(0);
+    doc.text('Executive Summary', 14, 45);
+    doc.setFontSize(10);
+    doc.text(`Total Monthly Spend: ${formatAmount(stats?.totalMonthly || 0)}`, 14, 52);
+    doc.text(`Estimated Annual Spend: ${formatAmount(stats?.totalAnnual || 0)}`, 14, 58);
+    doc.text(`Active Subscriptions: ${subs.filter(s => s.status === 'Active').length}`, 14, 64);
+
+    const tableData = subs.map(s => [
       s.name,
-      s.amount,
-      s.currency,
+      `${s.amount} ${s.currency}`,
       s.billing_cycle,
       s.category || 'General',
       s.status,
-      s.start_date || '',
-      s.next_renewal || ''
+      s.next_renewal ? new Date(s.next_renewal).toLocaleDateString() : 'N/A'
     ]);
-    const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v}"`).join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `subscriptions_export_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
-  }, [subs]);
+
+    autoTable(doc, {
+      startY: 75,
+      head: [['Subscription', 'Amount', 'Cycle', 'Category', 'Status', 'Next Renewal']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [33, 150, 243], textColor: 255 },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+    });
+
+    doc.save(`spending_report_${new Date().toISOString().split('T')[0]}.pdf`);
+  }, [subs, stats, formatAmount]);
 
   if (isLoading) return <DashboardLayout><div className="p-10 text-center">Loading analytics...</div></DashboardLayout>;
 
@@ -125,18 +154,22 @@ export default function Analytics() {
             </div>
             <div className="flex gap-2 w-full md:w-auto">
               <button className="flex-1 md:flex-none px-4 py-2 bg-surface-container-high dark:bg-slate-700 rounded-full font-label text-[9px] sm:text-[10px] lg:text-xs font-semibold text-on-surface dark:text-white">REAL-TIME DATA</button>
-              <button onClick={handleExport} className="flex-1 md:flex-none px-4 py-2 bg-surface dark:bg-slate-800 rounded-full font-label text-[9px] sm:text-[10px] lg:text-xs font-semibold text-on-surface-variant dark:text-slate-400 hover:bg-surface-container-low dark:hover:bg-slate-700 border border-outline-variant/30 dark:border-slate-600 lg:border-none transition-colors flex items-center gap-1.5 justify-center"><span className="material-symbols-outlined text-sm">download</span>EXPORT CSV</button>
+              <button 
+                onClick={handleExportPDF} 
+                className="flex-1 md:flex-none px-4 py-2 bg-primary dark:bg-blue-600 rounded-full font-label text-[9px] sm:text-[10px] lg:text-xs font-semibold text-white hover:bg-primary/90 transition-colors flex items-center gap-1.5 justify-center shadow-md"
+              >
+                <span className="material-symbols-outlined text-sm">download</span>EXPORT PDF
+              </button>
             </div>
           </div>
         </motion.section>
 
         <div className="grid grid-cols-12 gap-4 sm:gap-6">
-          {/* Main Spending Trend */}
           <motion.div variants={scaleIn} className="col-span-12 xl:col-span-8 bg-surface-container-lowest dark:bg-slate-800 p-5 sm:p-6 lg:p-10 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700/50">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 sm:mb-8 gap-4">
               <div>
                 <h3 className="font-headline text-base sm:text-lg lg:text-xl font-bold text-primary dark:text-white">Annual Spend Velocity</h3>
-                <p className="font-label text-on-surface-variant dark:text-slate-400 text-[10px] sm:text-xs lg:text-sm mt-0.5">Predictive trend based on cycles</p>
+                <p className="font-label text-on-surface-variant dark:text-slate-400 text-[10px] sm:text-xs lg:text-sm mt-0.5">Click bars to view monthly details</p>
               </div>
               <div className="sm:text-right">
                 <span className="font-headline text-xl sm:text-2xl lg:text-3xl font-bold text-primary dark:text-white">{formatAmount(stats?.totalAnnual || 0)}</span>
@@ -145,23 +178,68 @@ export default function Analytics() {
             </div>
 
             <div className="relative h-40 sm:h-48 lg:h-64 flex items-end justify-between gap-1 lg:gap-3 pt-4 border-b border-surface-container-highest dark:border-slate-600 pb-2">
-              {(stats?.barHeights || [40, 55, 35, 70, 60, 85, 95, 80, 65, 50, 45, 30]).map((h, i) => (
+              {(stats?.barHeights || []).map((h, i) => (
                 <motion.div
                   key={i}
                   initial={{ height: 0 }}
                   animate={{ height: `${h}%` }}
+                  onClick={() => setSelectedMonth(i)}
                   transition={{ duration: 0.6, delay: 0.1 + i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                  className={`flex-1 rounded-t-md sm:rounded-t-lg transition-colors hover:bg-primary-container dark:hover:bg-blue-800 cursor-pointer group relative ${i === new Date().getMonth() ? 'bg-primary dark:bg-blue-600' : 'bg-surface-container-low dark:bg-slate-600'}`}
+                  className={`flex-1 rounded-t-md sm:rounded-t-lg transition-all hover:bg-primary-container dark:hover:bg-blue-800 cursor-pointer group relative ${selectedMonth === i ? 'bg-primary dark:bg-blue-500 ring-2 ring-primary/20 scale-y-[1.02]' : 'bg-surface-container-low dark:bg-slate-600'}`}
                   title={`${MONTHS[i]}: ${formatAmount(stats?.monthlySpend?.[i] || 0)}`}
                 />
               ))}
             </div>
             <div className="flex justify-between mt-3 text-[7px] sm:text-[8px] lg:text-[10px] font-label text-on-surface-variant dark:text-slate-400 tracking-widest uppercase overflow-hidden">
-              <span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span>
+              {MONTHS.map(m => <span key={m}>{m}</span>)}
             </div>
+
+            <AnimatePresence mode="wait">
+              {selectedMonth !== null && (
+                <motion.div 
+                  key={selectedMonth}
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-700"
+                >
+                  <div className="flex justify-between items-center mb-4">
+                    <h4 className="font-headline font-bold text-sm sm:text-base text-primary dark:text-white">
+                      Details for {MONTHS[selectedMonth]}
+                    </h4>
+                    <span className="font-label text-xs font-bold text-primary dark:text-blue-400">
+                      Total: {formatAmount(stats?.monthlySpend?.[selectedMonth] || 0)}
+                    </span>
+                  </div>
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                    {stats?.monthlyBreakdown[selectedMonth]?.map((s, idx) => (
+                      <div key={`${s.id}-${idx}`} className="flex justify-between items-center bg-surface dark:bg-slate-700/50 p-2.5 rounded-xl border border-transparent hover:border-primary/20 transition-all">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary text-xs font-bold">
+                            {s.name.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-on-surface dark:text-white">{s.name}</p>
+                            <p className="text-[10px] text-on-surface-variant dark:text-slate-400">{s.category}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs font-bold text-on-surface dark:text-white">
+                            {formatAmount(s.billing_cycle === 'Annual' ? s.amount / 12 : s.billing_cycle === 'Quarterly' ? s.amount / 3 : s.amount)}
+                          </p>
+                          <p className="text-[9px] text-on-surface-variant dark:text-slate-400 uppercase tracking-tighter">Pro-rated</p>
+                        </div>
+                      </div>
+                    ))}
+                    {(!stats?.monthlyBreakdown[selectedMonth] || stats?.monthlyBreakdown[selectedMonth].length === 0) && (
+                      <p className="text-center text-xs text-on-surface-variant py-4 italic">No active subscriptions detected for this month.</p>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
 
-          {/* Category Distribution */}
           <motion.div variants={fadeUp} className="col-span-12 xl:col-span-4 bg-surface-container-lowest dark:bg-slate-800 p-5 sm:p-6 lg:p-8 rounded-2xl shadow-sm flex flex-col items-center border border-slate-100 dark:border-slate-700/50">
             <h3 className="font-headline text-base sm:text-lg font-bold text-primary dark:text-white mb-4 sm:mb-6 w-full text-left">Allocation</h3>
             <div className="relative w-32 h-32 sm:w-40 sm:h-40 lg:w-48 lg:h-48 mb-6 sm:mb-8">
@@ -191,7 +269,7 @@ export default function Analytics() {
                   className="flex justify-between items-center group"
                 >
                   <div className="flex items-center gap-2.5 sm:gap-3">
-                    <div className={`w-2.5 h-2.5 sm:w-3 h-3 rounded-full ${i === 0 ? 'bg-primary-container dark:bg-blue-900' : i === 1 ? 'bg-secondary-container dark:bg-cyan-800' : 'bg-tertiary-fixed-dim'}`}></div>
+                    <div className={`w-2.5 h-2.5 sm:w-3 h-3 rounded-full ${i === 0 ? 'bg-primary dark:bg-blue-500' : i === 1 ? 'bg-secondary-container dark:bg-cyan-800' : 'bg-tertiary-fixed-dim'}`}></div>
                     <span className="font-body text-[11px] sm:text-sm font-medium dark:text-slate-200">{cat.name}</span>
                   </div>
                   <span className="font-label text-[11px] sm:text-sm font-bold dark:text-white">{formatAmount(cat.val)}</span>
@@ -200,7 +278,6 @@ export default function Analytics() {
             </div>
           </motion.div>
 
-          {/* Savings Opportunities */}
           <motion.div variants={fadeUp} className="col-span-12 mt-2 sm:mt-4 space-y-4 sm:space-y-6">
             <div className="flex items-center gap-2 mb-1 sm:mb-2 lg:mb-4">
               <span className="material-symbols-outlined text-tertiary-fixed-dim text-xl sm:text-2xl">verified</span>
@@ -284,7 +361,6 @@ export default function Analytics() {
             </div>
           </motion.div>
 
-          {/* Editorial & Next Big */}
           <motion.div variants={fadeUp} className="col-span-12 grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 mt-2">
             <motion.div
               whileHover={{ scale: 1.02 }}

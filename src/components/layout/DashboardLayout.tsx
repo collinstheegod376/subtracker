@@ -13,14 +13,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  // Protect routes when Supabase is configured
   useEffect(() => {
     if (isSupabaseConfigured && !loading && !user) {
       router.push('/login');
     }
   }, [loading, user, router]);
 
-  // Show loading spinner while checking auth state
   if (isSupabaseConfigured && loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-surface dark:bg-[#0f1115]">
@@ -29,7 +27,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     );
   }
 
-  // Prevent flash of protected content during redirect
   if (isSupabaseConfigured && !user) {
     return null;
   }

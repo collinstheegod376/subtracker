@@ -16,7 +16,6 @@ export default function Header({ toggleMobile }: { toggleMobile: () => void }) {
   const { user } = useAuth();
   const { formatAmount } = useSettings();
 
-  // Search state
   const [searchQuery, setSearchQuery] = useState('');
   const [allSubs, setAllSubs] = useState<Subscription[]>([]);
   const [searchResults, setSearchResults] = useState<Subscription[]>([]);
@@ -33,7 +32,6 @@ export default function Header({ toggleMobile }: { toggleMobile: () => void }) {
     getSubscriptions().then(setAllSubs).catch(() => {});
   }, []);
 
-  // Realtime: listen for new notifications
   useEffect(() => {
     if (!user?.id) return;
     const sub = subscribeToNotifications(user.id, (newNotif) => {
@@ -52,7 +50,6 @@ export default function Header({ toggleMobile }: { toggleMobile: () => void }) {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Live search logic
   useEffect(() => {
     if (searchQuery.trim().length === 0) {
       setSearchResults([]);
@@ -155,7 +152,6 @@ export default function Header({ toggleMobile }: { toggleMobile: () => void }) {
       </div>
 
       <div className="flex items-center gap-3 lg:gap-6">
-        {/* Notifications */}
         <div className="relative" ref={ref}>
           <button 
             className="text-on-surface-variant dark:text-slate-400 hover:text-primary dark:hover:text-blue-400 transition-colors active:scale-90 relative"

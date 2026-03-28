@@ -19,7 +19,6 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boo
 
   return (
     <>
-      {/* Mobile Overlay */}
       <AnimatePresence>
         {mobileOpen && (
           <motion.div 
@@ -33,7 +32,6 @@ export default function Sidebar({ mobileOpen, setMobileOpen }: { mobileOpen: boo
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
       <aside 
         className={clsx(
           "h-screen w-64 fixed left-0 top-0 bg-slate-50 dark:bg-slate-900 flex flex-col p-4 gap-2 z-50 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] lg:translate-x-0 border-r border-slate-100 dark:border-slate-800",

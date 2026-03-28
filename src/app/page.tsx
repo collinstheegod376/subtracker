@@ -31,7 +31,6 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
-  // Compute totals from real data, fallback to demo data
   const activeSubs = subs.filter(s => s.status === 'Active');
   const totalMonthly = activeSubs.reduce((sum, s) => {
     const amt = Number(s.amount);
@@ -41,7 +40,6 @@ export default function Dashboard() {
   }, 0);
   const dailyVelocity = totalMonthly / 30;
 
-  // Demo data for display when no subs from DB
   const hasSubs = subs.length > 0;
   const displayTotal = hasSubs ? totalMonthly : 1248.50;
   const displayDaily = hasSubs ? dailyVelocity : 41.61;
@@ -64,7 +62,6 @@ export default function Dashboard() {
 
   const upcomingReminders = hasSubs
     ? activeSubs.map(s => {
-        // Fallback to a stable fake day if no next_billing_date exists in the database
         const anyS = s as any;
         const day = anyS.next_billing_date ? new Date(anyS.next_billing_date).getDate().toString() : ((s.name.charCodeAt(0) % 28) + 1).toString().padStart(2, '0');
         return {
@@ -160,7 +157,6 @@ export default function Dashboard() {
             </div>
           </motion.div>
 
-          {/* Upcoming Reminders */}
           <motion.div variants={fadeUp} className="col-span-12 lg:col-span-4 bg-primary dark:bg-blue-600 rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-8 text-white flex flex-col shadow-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
             
@@ -196,7 +192,6 @@ export default function Dashboard() {
             </Link>
           </motion.div>
 
-          {/* Sector Distribution */}
           <motion.div variants={fadeUp} className="col-span-12 lg:col-span-5 bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-8 lg:p-10 shadow-xl border border-white/20 dark:border-slate-700/30">
             <h4 className="font-headline text-lg sm:text-xl font-black text-primary dark:text-white mb-6 sm:mb-8 flex items-center gap-2 sm:gap-3">
               <span className="w-1.5 h-4 sm:h-6 bg-tertiary rounded-full"></span>
@@ -258,12 +253,9 @@ export default function Dashboard() {
             </div>
           </motion.div>
 
-          {/* Top Subscriptions */}
           <motion.div variants={fadeUp} className="col-span-12 lg:col-span-7 bg-white/60 dark:bg-slate-800/60 backdrop-blur-xl rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-8 lg:p-10 shadow-xl border border-white/20 dark:border-slate-700/30">
-            <div className="flex items-center justify-between mb-6 sm:mb-8">
-              <h4 className="font-headline text-lg sm:text-xl font-black text-primary dark:text-white">Active Services</h4>
-              <Link href="/subscriptions" className="text-primary dark:text-blue-400 font-black text-[10px] hover:underline tracking-widest uppercase">All</Link>
-            </div>
+              <h4 className="font-headline text-lg sm:text-xl font-black text-primary dark:text-white uppercase tracking-tighter">Active Services</h4>
+              <Link href="/subscriptions" className="text-primary dark:text-blue-400 font-black text-[10px] hover:underline tracking-widest uppercase">Overview</Link>
             <div className="space-y-3 sm:space-y-4">
               {topSubs.map((item, i) => (
                 <motion.div 
@@ -295,7 +287,6 @@ export default function Dashboard() {
         </div>
       </motion.div>
       
-      {/* Mobile FAB */}
       <motion.a
         href="/add"
         whileHover={{ scale: 1.1 }}
