@@ -44,7 +44,7 @@ export default function ForgotPassword() {
 
         <div className="bg-surface-container-lowest dark:bg-slate-800/80 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700/50">
           <h2 className="text-2xl font-extrabold font-headline text-primary dark:text-white mb-2 text-center">Reset Password</h2>
-          <p className="text-center text-sm text-on-surface-variant dark:text-slate-400 mb-6 font-medium">Enter your email and we'll send you a link to get back into your account.</p>
+          <p className="text-center text-sm text-on-surface-variant dark:text-slate-400 mb-6 font-medium">Enter your email and we&apos;ll send you a link to get back into your account.</p>
           
           {error && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="bg-error-container text-on-error-container text-xs font-medium px-4 py-3 rounded-xl mb-4">

@@ -12,8 +12,16 @@ export const metadata: Metadata = {
   title: 'SUB TRACK',
   description: 'Manage and analyze your subscriptions. Next-gen monitoring for your spendings.',
   manifest: '/manifest.json',
-  themeColor: '#2563eb',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
+  themeColor: '#002B5C',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=5',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'SUB TRACK',
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({
@@ -27,20 +35,6 @@ export default function RootLayout({
         <AuthProvider>
           <SettingsProvider>
             {children}
-            <script
-              dangerouslySetInnerHTML={{
-                __html: `
-                if ('serviceWorker' in navigator) {
-                  window.addEventListener('load', function() {
-                    navigator.serviceWorker.register('/sw.js').then(
-                      function(registration) { console.log('Service Worker registered with scope:', registration.scope); },
-                      function(err) { console.log('Service Worker registration failed:', err); }
-                    );
-                  });
-                }
-              `,
-              }}
-            />
           </SettingsProvider>
         </AuthProvider>
         <SpeedInsights />

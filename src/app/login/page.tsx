@@ -42,7 +42,7 @@ export default function Login() {
 
         <div className="bg-surface-container-lowest dark:bg-slate-800/80 p-8 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700/50">
           <h2 className="text-2xl font-extrabold font-headline text-primary dark:text-white mb-6 text-center">Welcome Back</h2>
-          
+
           {error && (
             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="bg-error-container text-on-error-container text-xs font-medium px-4 py-3 rounded-xl mb-4">
               {error}
@@ -52,12 +52,12 @@ export default function Login() {
           <form className="space-y-5" onSubmit={handleSubmit}>
             <div>
               <label className="block text-[10px] font-bold text-on-surface-variant dark:text-slate-400 mb-2 uppercase tracking-widest">Email Address</label>
-              <input 
-                type="email" 
+              <input
+                type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-surface-container-high dark:bg-slate-700 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-surface-tint dark:focus:ring-blue-500 outline-none text-on-surface dark:text-white placeholder:text-slate-400 transition-all" 
-                placeholder="you@example.com" 
+                className="w-full bg-surface-container-high dark:bg-slate-700 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-surface-tint dark:focus:ring-blue-500 outline-none text-on-surface dark:text-white placeholder:text-slate-400 transition-all"
+                placeholder="you@example.com"
                 required
               />
             </div>
@@ -66,16 +66,16 @@ export default function Login() {
                 <label className="block text-[10px] font-bold text-on-surface-variant dark:text-slate-400 uppercase tracking-widest">Password</label>
                 <Link href="/forgot-password" title="Recover Password" className="text-[10px] font-bold text-surface-tint dark:text-blue-400 uppercase tracking-widest hover:underline">Forgot password?</Link>
               </div>
-              <input 
+              <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-surface-container-high dark:bg-slate-700 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-surface-tint dark:focus:ring-blue-500 outline-none text-on-surface dark:text-white placeholder:text-slate-400 transition-all" 
-                placeholder="••••••••" 
+                className="w-full bg-surface-container-high dark:bg-slate-700 border-none rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-surface-tint dark:focus:ring-blue-500 outline-none text-on-surface dark:text-white placeholder:text-slate-400 transition-all"
+                placeholder="••••••••"
                 required
               />
             </div>
-            <motion.button 
+            <motion.button
               whileTap={{ scale: 0.97 }}
               disabled={loading}
               className="w-full primary-gradient text-white font-bold py-3 rounded-full mt-2 shadow-lg hover:shadow-xl transition-all disabled:opacity-60"
