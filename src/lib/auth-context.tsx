@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
 
@@ -27,22 +28,51 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+      
+      // Handle the case where the session was established but the event didn't trigger
+      if (typeof window !== 'undefined') {
+        const hash = window.location.hash;
+        const currentPath = window.location.pathname;
+        if (hash.includes('type=recovery') && currentPath !== '/reset-password') {
+          router.push('/reset-password' + hash);
+        } else if ((hash.includes('type=signup') || hash.includes('type=invite')) && currentPath !== '/auth/success') {
+          router.push('/auth/success' + hash);
+        }
+      }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      if (event === 'PASSWORD_RECOVERY') {
+        const hash = typeof window !== 'undefined' ? window.location.hash : '';
+        if (window.location.pathname !== '/reset-password') {
+          router.push('/reset-password' + hash);
+        }
+      } else if (event === 'SIGNED_IN') {
+        if (typeof window !== 'undefined') {
+          const hash = window.location.hash;
+          const currentPath = window.location.pathname;
+          if (hash.includes('type=recovery') && currentPath !== '/reset-password') {
+            router.push('/reset-password' + hash);
+          } else if ((hash.includes('type=signup') || hash.includes('type=invite')) && currentPath !== '/auth/success') {
+            router.push('/auth/success' + hash);
+          }
+        }
+      }
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [router]);
 
   const signUp = async (email: string, password: string, name: string) => {
     const { error } = await supabase.auth.signUp({

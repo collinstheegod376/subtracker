@@ -41,7 +41,7 @@ serve(async (req) => {
     for (const sub of dueSubs) {
       const isDueToday = sub.next_renewal === todayStr;
       const title = isDueToday ? `Subscription Due Today!` : `Subscription Renewal Tomorrow`;
-      const body = isDueToday 
+      const body = isDueToday
         ? `Your ${sub.name} subscription (${sub.currency}${sub.amount}) is due today. ${timeOfDay === 'morning' ? 'Ensure you have enough balance.' : 'This is your final reminder for today.'}`
         : `Your ${sub.name} subscription will renew tomorrow for ${sub.currency}${sub.amount}. ${timeOfDay === 'morning' ? 'Heads up!' : 'Just checking in once more.'}`;
 
