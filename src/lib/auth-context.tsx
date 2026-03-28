@@ -4,6 +4,19 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import type { User, Session } from '@supabase/supabase-js';
 
+const getBaseURL = () => {
+  let url =
+    process?.env?.NEXT_PUBLIC_SITE_URL ?? // Set this to your site URL in production
+    process?.env?.NEXT_PUBLIC_VERCEL_URL ?? // Automatically set by Vercel
+    'http://localhost:3000';
+  
+  // Make sure to include `https://` when not localhost
+  url = url.includes('http') ? url : `https://${url}`;
+  // Remove trailing slash
+  url = url.charAt(url.length - 1) === '/' ? url.slice(0, -1) : url;
+  return url;
+};
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
@@ -80,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: { 
         data: { full_name: name },
-        emailRedirectTo: `${window.location.origin}/auth/success`
+        emailRedirectTo: `${getBaseURL()}/auth/success`
       },
     });
     return { error };
@@ -97,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
+      redirectTo: `${getBaseURL()}/reset-password`,
     });
     return { error };
   };
